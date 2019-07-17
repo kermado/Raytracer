@@ -1,17 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Numerics;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace Raytracer
 {
@@ -20,19 +11,65 @@ namespace Raytracer
     /// </summary>
     public partial class MainWindow : Window
     {
+        private Scene scene;
+        private PerspectiveCamera camera;
+        private int width;
+        private int height;
+        private byte[] pixelBuffer;
         private WriteableBitmap bitmap;
 
         public MainWindow()
         {
             InitializeComponent();
 
+            this.width = (int)Width;
+            this.height = (int)Height;
+
+            CreatePixelBuffer();
             CreateBitmap();
-            UpdateBitmap();
+
+            CreateScene();
+            Render();
+        }
+
+        private void CreateScene()
+        {
+            this.scene = new Scene();
+            this.scene.Add(new Sphere(new Vector3(0.0F, 0.0F, 4.0F), 1.0F));
+
+            this.camera = new PerspectiveCamera();
+        }
+
+        private void CreatePixelBuffer()
+        {
+            this.pixelBuffer = new byte[this.width * this.height * 3];
         }
 
         private void Render()
         {
-            // TODO:
+            var intersection = new Intersection();
+
+            int index = 0;
+            for (int row = 0; row < this.height; ++row)
+            {
+                for (int col = 0; col < this.width; ++col)
+                {
+                    if (this.scene.Intersect(this.camera.RayForPixel(col, row, this.width, this.height), ref intersection))
+                    {
+                        this.pixelBuffer[index++] = 255;
+                        this.pixelBuffer[index++] = 255;
+                        this.pixelBuffer[index++] = 255;
+                    }
+                    else
+                    {
+                        this.pixelBuffer[index++] = 0;
+                        this.pixelBuffer[index++] = 0;
+                        this.pixelBuffer[index++] = 0;
+                    }
+                }
+            }
+
+            UpdateBitmap();
         }
 
         private unsafe void UpdateBitmap()
@@ -41,20 +78,20 @@ namespace Raytracer
 
             try
             {
-                var width = this.bitmap.PixelWidth;
-                var height = this.bitmap.PixelHeight;
+                byte* ptr = (byte*)this.bitmap.BackBuffer.ToPointer();
 
-                var backBuffer = this.bitmap.BackBuffer;
-                for (int row = 0; row < height; ++row)
+                int index = 0;
+                for (int row = 0; row < this.height; ++row)
                 {
-                    for (int col = 0; col < width; ++col)
+                    for (int col = 0; col < this.width; ++col)
                     {
-                        var ptr = backBuffer + this.bitmap.BackBufferStride * row + col * 3;
-                        *((int*)ptr) = row; // TODO: Fill with pixel data.
+                        *(ptr++) = this.pixelBuffer[index++];
+                        *(ptr++) = this.pixelBuffer[index++];
+                        *(ptr++) = this.pixelBuffer[index++];
                     }
                 }
 
-                this.bitmap.AddDirtyRect(new Int32Rect(0, 0, width, height));
+                this.bitmap.AddDirtyRect(new Int32Rect(0, 0, this.width, this.height));
             }
             finally
             {
@@ -64,7 +101,7 @@ namespace Raytracer
 
         private void CreateBitmap()
         {
-            this.bitmap = new WriteableBitmap((int)Width, (int)Height, 96, 96, PixelFormats.Rgb24, null);
+            this.bitmap = new WriteableBitmap(this.width, this.height, 96, 96, PixelFormats.Rgb24, null);
             Canvas.Source = this.bitmap;
         }
     }
