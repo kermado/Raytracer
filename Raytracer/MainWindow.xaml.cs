@@ -62,7 +62,8 @@ namespace Raytracer
         {
             this.scene = new Scene();
             this.scene.Add(new Sphere(new Vector3(0.0F, 0.0F, 4.0F), 1.0F));
-            this.scene.Add(new PointLight(new Vector3(0.0F, 4.0F, 0.0F), Color.White, 100.0F));
+            this.scene.Add(new PointLight(new Vector3(-4.0F, 4.0F, 0.0F), Color.Red, 100.0F));
+            this.scene.Add(new PointLight(new Vector3(4.0F, 4.0F, 0.0F), Color.Green, 100.0F));
             this.camera = new PerspectiveCamera();
         }
 

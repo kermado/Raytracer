@@ -74,7 +74,7 @@ namespace Raytracer
                 {
                     var point = Ray.Point(ray, dist1);
                     var normal = Vector3.Normalize(point - sphere.Center);
-                    intersection = new Intersection(ray, dist1, normal);
+                    intersection = new Intersection(ray, dist1, normal, sphere.Color);
                     return true;
                 }
             }
@@ -104,23 +104,22 @@ namespace Raytracer
                 var startPoint = intersectionPoint + intersection.Normal * bias;
 
                 // Direct lighting.
+                var color = Color.Black;
                 foreach (var light in this.pointLights)
                 {
                     var vecToLight = light.Position - startPoint;
                     var dirToLight = Vector3.Normalize(vecToLight);
-                    if (Intersect(new Ray(startPoint, dirToLight), ref intersection))
+                    if (Intersect(new Ray(startPoint, dirToLight), ref intersection) == false)
                     {
                         // If we hit something on the way to the light then we're in shadow.
-                        return Color.Black;
-                    }
-                    else
-                    {
-                        // Visibility from the light.
+                        // Otherwise, we have visibility from the light.
                         var intensity = light.Intensity / (4.0F * (float)Math.PI * vecToLight.LengthSquared()); // Inverse square law.
                         intensity *= Vector3.Dot(intersection.Normal, dirToLight); // Surface effect.
-                        return new Color(intensity, intensity, intensity);
+                        color += light.Color * intersection.Color * intensity;
                     }
                 }
+
+                return Color.Clamp(color);
             }
 
             return this.background;
