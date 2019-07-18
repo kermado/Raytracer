@@ -1,24 +1,51 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Numerics;
 
 namespace Raytracer
 {
     public sealed class Scene
     {
         /// <summary>
+        /// The background color for the scene.
+        /// </summary>
+        private Color background;
+
+        /// <summary>
+        /// The list of point light sources in the scene.
+        /// </summary>
+        private List<PointLight> pointLights;
+
+        /// <summary>
         /// The list of sphere primitives in the scene.
         /// </summary>
         private List<Sphere> spheres;
+
+        /// <summary>
+        /// The background color for the scene.
+        /// </summary>
+        public Color Background
+        {
+            get { return this.background; }
+            set { this.background = value; }
+        }
 
         /// <summary>
         /// Default constructor.
         /// </summary>
         public Scene()
         {
+            this.pointLights = new List<PointLight>();
             this.spheres = new List<Sphere>();
+        }
+
+        /// <summary>
+        /// Adds a point light source to the scene.
+        /// </summary>
+        /// <param name="light">The point light.</param>
+        public void Add(PointLight light)
+        {
+            this.pointLights.Add(light);
         }
 
         /// <summary>
@@ -51,6 +78,44 @@ namespace Raytracer
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Determines the color for the specified pixel.
+        /// </summary>
+        /// <param name="camera">The camera.</param>
+        /// <param name="px">The horizontal pixel coordinate, in the interval [0, pw-1].</param>
+        /// <param name="py">The vertical pixel coordinate, in the interval [0, ph-1].</param>
+        /// <param name="pw">The total number of horizontal pixels.</param>
+        /// <param name="ph">The total number of vertical pixels.</param>
+        /// <returns>The color for the pixel.</returns>
+        public Color PixelColor(PerspectiveCamera camera, int px, int py, int pw, int ph)
+        {
+            // Ray from camera.
+            var intersection = new Intersection();
+            if (Intersect(camera.RayForPixel(px, py, pw, ph), ref intersection))
+            {
+                // Point of intersection.
+                var intersectionPoint = intersection.Point();
+
+                // Direct lighting.
+                foreach (var light in this.pointLights)
+                {
+                    var dirToLight = Vector3.Normalize(light.Position - intersectionPoint);
+                    if (Intersect(new Ray(intersectionPoint, dirToLight), ref intersection))
+                    {
+                        // If we hit something on the way to the light then we're in shadow.
+                        return Color.Black;
+                    }
+                    else
+                    {
+                        // Full visibility from the light.
+                        return Color.White;
+                    }
+                }
+            }
+
+            return this.background;
         }
     }
 }

@@ -1,4 +1,6 @@
-﻿namespace Raytracer
+﻿using System.Numerics;
+
+namespace Raytracer
 {
     public struct Intersection
     {
@@ -9,6 +11,11 @@
         {
             Ray = ray;
             Distance = distance;
+        }
+
+        public Vector3 Point()
+        {
+            return Ray.Start + Ray.Direction * Distance;
         }
     }
 }

@@ -62,7 +62,7 @@ namespace Raytracer
         {
             this.scene = new Scene();
             this.scene.Add(new Sphere(new Vector3(0.0F, 0.0F, 4.0F), 1.0F));
-
+            this.scene.Add(new PointLight(new Vector3(0.0F, 4.0F, 0.0F), Color.White, 1.0F));
             this.camera = new PerspectiveCamera();
         }
 
@@ -73,25 +73,15 @@ namespace Raytracer
 
         private void Render()
         {
-            var intersection = new Intersection();
-
             int index = 0;
             for (int row = 0; row < this.height; ++row)
             {
                 for (int col = 0; col < this.width; ++col)
                 {
-                    if (this.scene.Intersect(this.camera.RayForPixel(col, row, this.width, this.height), ref intersection))
-                    {
-                        this.pixelBuffer[index++] = 255;
-                        this.pixelBuffer[index++] = 255;
-                        this.pixelBuffer[index++] = 255;
-                    }
-                    else
-                    {
-                        this.pixelBuffer[index++] = 0;
-                        this.pixelBuffer[index++] = 0;
-                        this.pixelBuffer[index++] = 0;
-                    }
+                    var color = this.scene.PixelColor(this.camera, col, row, this.width, this.height);
+                    this.pixelBuffer[index++] = (byte)(color.R * 255);
+                    this.pixelBuffer[index++] = (byte)(color.G * 255);
+                    this.pixelBuffer[index++] = (byte)(color.B * 255);
                 }
             }
 

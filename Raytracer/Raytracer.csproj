@@ -62,8 +62,10 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Camera.cs" />
+    <Compile Include="Color.cs" />
     <Compile Include="Intersect.cs" />
     <Compile Include="Intersection.cs" />
+    <Compile Include="PointLight.cs" />
     <Compile Include="Ray.cs" />
     <Compile Include="Scene.cs" />
     <Compile Include="Sphere.cs" />
