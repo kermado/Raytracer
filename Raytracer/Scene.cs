@@ -69,11 +69,13 @@ namespace Raytracer
             foreach (var sphere in this.spheres)
             {
                 var numIntersections = Raytracer.Intersect.RaySphere(ray, sphere, out var dist1, out var dist2);
-                switch (numIntersections)
+
+                if (numIntersections > 0)
                 {
-                    case 0: return false;
-                    case 1: intersection = new Intersection(ray, dist1); return true;
-                    case 2: intersection = new Intersection(ray, Math.Min(dist1, dist2)); return true;
+                    var point = Ray.Point(ray, dist1);
+                    var normal = Vector3.Normalize(point - sphere.Center);
+                    intersection = new Intersection(ray, dist1, normal);
+                    return true;
                 }
             }
 
@@ -91,18 +93,21 @@ namespace Raytracer
         /// <returns>The color for the pixel.</returns>
         public Color PixelColor(PerspectiveCamera camera, int px, int py, int pw, int ph)
         {
+            const float bias = 0.0001F; // Bias to prevent self-shadowing (shadow acne).
+
             // Ray from camera.
             var intersection = new Intersection();
             if (Intersect(camera.RayForPixel(px, py, pw, ph), ref intersection))
             {
                 // Point of intersection.
                 var intersectionPoint = intersection.Point();
+                var startPoint = intersectionPoint + intersection.Normal * bias;
 
                 // Direct lighting.
                 foreach (var light in this.pointLights)
                 {
-                    var dirToLight = Vector3.Normalize(light.Position - intersectionPoint);
-                    if (Intersect(new Ray(intersectionPoint, dirToLight), ref intersection))
+                    var dirToLight = Vector3.Normalize(light.Position - startPoint);
+                    if (Intersect(new Ray(startPoint, dirToLight), ref intersection))
                     {
                         // If we hit something on the way to the light then we're in shadow.
                         return Color.Black;
