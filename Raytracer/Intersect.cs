@@ -29,9 +29,11 @@ namespace Raytracer
             // Intersection occurs when ||s + d*l|| = r <==> ||s + d*l||^2 = r^2
             //                                          <==> (d.d)*l^2 + 2l*(s.d) + s.s - r^2
             //
+            // However, ||d|| = 1, so d.d = 1.
+            //
             // We solve this quadratic for l, the length along the ray at the points of
             // intersection.
-            int count = SolveQuadratic(Vector3.Dot(dr, dr), 2.0F * Vector3.Dot(sr, dr), Vector3.Dot(sr, sr) - rs, out l1, out l2);
+            int count = SolveQuadratic(1.0F, 2.0F * Vector3.Dot(sr, dr), Vector3.Dot(sr, sr) - rs, out l1, out l2);
             switch (count)
             {
                 case 1: return Positive(ref l1);
