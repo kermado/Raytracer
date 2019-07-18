@@ -1,8 +1,8 @@
-﻿using System;
-using System.Numerics;
+﻿using System.Numerics;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Input;
 
 namespace Raytracer
 {
@@ -29,6 +29,32 @@ namespace Raytracer
             CreateBitmap();
 
             CreateScene();
+            Render();
+
+            KeyDown += OnKeyDown;
+        }
+
+        private void OnKeyDown(object sender, KeyEventArgs e)
+        {
+            const float speed = 0.1F;
+
+            if (e.Key == Key.Up || e.Key == Key.W)
+            {
+                this.camera.Position += this.camera.Forwards * speed;
+            }
+            else if (e.Key == Key.Down || e.Key == Key.S)
+            {
+                this.camera.Position -= this.camera.Forwards * speed;
+            }
+            else if (e.Key == Key.Right || e.Key == Key.D)
+            {
+                this.camera.Position += this.camera.Right * speed;
+            }
+            else if (e.Key == Key.Left || e.Key == Key.A)
+            {
+                this.camera.Position -= this.camera.Right * speed;
+            }
+
             Render();
         }
 

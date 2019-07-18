@@ -31,7 +31,65 @@ namespace Raytracer
             //
             // We solve this quadratic for l, the length along the ray at the points of
             // intersection.
-            return SolveQuadratic(Vector3.Dot(dr, dr), 2.0F * Vector3.Dot(sr, dr), Vector3.Dot(sr, sr) - rs, out l1, out l2);
+            int count = SolveQuadratic(Vector3.Dot(dr, dr), 2.0F * Vector3.Dot(sr, dr), Vector3.Dot(sr, sr) - rs, out l1, out l2);
+            switch (count)
+            {
+                case 1: return Positive(ref l1);
+                case 2: return PositiveOrdered(ref l1, ref l2);
+            }
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Returns 1 if the provided value is positive, otherwise returns 0.
+        /// </summary>
+        /// <param name="val">The value.</param>
+        /// <returns>Whether the value is positive.</returns>
+        private static int Positive(ref float val)
+        {
+            if (val > 0.0F)
+            {
+                return 1;
+            }
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Returns the number of positive values and orders the values so that the positive values
+        /// come first, ordered by size.
+        /// </summary>
+        /// <param name="val1">The first value.</param>
+        /// <param name="val2">The second value.</param>
+        /// <returns>The number of positive values.</returns>
+        private static int PositiveOrdered(ref float val1, ref float val2)
+        {
+            if (val1 > 0.0F && val2 > 0.0F)
+            {
+                if (val1 > val2)
+                {
+                    float temp = val1;
+                    val1 = val2;
+                    val2 = temp;
+                }
+
+                return 2;
+            }
+            else if (val1 > 0.0F)
+            {
+                return 1;
+            }
+            else if (val2 > 0.0F)
+            {
+                float temp = val1;
+                val1 = val2;
+                val2 = temp;
+
+                return 1;
+            }
+
+            return 0;
         }
 
         /// <summary>
