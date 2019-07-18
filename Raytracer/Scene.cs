@@ -106,7 +106,8 @@ namespace Raytracer
                 // Direct lighting.
                 foreach (var light in this.pointLights)
                 {
-                    var dirToLight = Vector3.Normalize(light.Position - startPoint);
+                    var vecToLight = light.Position - startPoint;
+                    var dirToLight = Vector3.Normalize(vecToLight);
                     if (Intersect(new Ray(startPoint, dirToLight), ref intersection))
                     {
                         // If we hit something on the way to the light then we're in shadow.
@@ -114,8 +115,10 @@ namespace Raytracer
                     }
                     else
                     {
-                        // Full visibility from the light.
-                        return Color.White;
+                        // Visibility from the light.
+                        var intensity = light.Intensity / (4.0F * (float)Math.PI * vecToLight.LengthSquared()); // Inverse square law.
+                        intensity *= Vector3.Dot(intersection.Normal, dirToLight); // Surface effect.
+                        return new Color(intensity, intensity, intensity);
                     }
                 }
             }
