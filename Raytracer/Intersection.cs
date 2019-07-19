@@ -21,5 +21,10 @@ namespace Raytracer
         {
             return Ray.Start + Ray.Direction * Distance;
         }
+
+        public float DistanceSq()
+        {
+            return Distance * Distance;
+        }
     }
 }

@@ -11,10 +11,9 @@ namespace Raytracer
         /// </summary>
         /// <param name="ray">The ray.</param>
         /// <param name="sphere">The sphere.</param>
-        /// <param name="l1">The distance along the ray at which the first point of intersection occurs.</param>
-        /// <param name="l2">The distance along the ray at which the second point of intersection occurs.</param>
-        /// <returns>The number of points of intersection, in the interval [0, 2].</returns>
-        public static int RaySphere(Ray ray, Sphere sphere, out float l1, out float l2)
+        /// <param name="distance">The distance along the ray at which the first point of intersection occurs.</param>
+        /// <returns>Whether the ray intersects the sphere.</returns>
+        public static bool RaySphere(Ray ray, Sphere sphere, out float distance)
         {
             // Transform the start of the ray to the sphere's local coordinate system, where the
             // sphere's center is positioned at the origin.
@@ -33,65 +32,87 @@ namespace Raytracer
             //
             // We solve this quadratic for l, the length along the ray at the points of
             // intersection.
-            int count = SolveQuadratic(1.0F, 2.0F * Vector3.Dot(sr, dr), Vector3.Dot(sr, sr) - rs, out l1, out l2);
-            switch (count)
+            float distance2;
+            switch (SolveQuadratic(1.0F, 2.0F * Vector3.Dot(sr, dr), Vector3.Dot(sr, sr) - rs, out distance, out distance2))
             {
-                case 1: return Positive(ref l1);
-                case 2: return PositiveOrdered(ref l1, ref l2);
+                case 1: return Positive(distance);
+                default: return SmallestPositive(distance, distance2, out distance);
             }
-
-            return 0;
         }
 
         /// <summary>
-        /// Returns 1 if the provided value is positive, otherwise returns 0.
+        /// Intersects a ray with a plane.
+        /// </summary>
+        /// <param name="ray">The ray.</param>
+        /// <param name="plane">The plane.</param>
+        /// <param name="distance">The distance along the ray at which the point of intersection occurs.</param>
+        /// <returns>Whether the ray intersects the plane.</returns>
+        public static bool RayPlane(Ray ray, Plane plane, out float distance)
+        {
+            // A point on a plane is parameterized by (p - o).n = 0, where n is the normal to the
+            // plane and o is a point on the plane.
+            // A point on a ray is parameterized by p = s + d*l, where s is the start of the ray and
+            // d is the direction of the ray.
+            //
+            // Intersection occurs when ((s + d*l) - o).n = 0 <==> s.n + l(d.n) - o.n = 0
+            //                                                <==> l = (o.n - s.n) / d.n
+            //
+            // If d.n = 0 then the ray is perpendicular to the plane. We consider the ray to not
+            // intersect the plane in such a case.
+            var op = plane.Origin;
+            var np = plane.Normal;
+            var or = ray.Start;
+            var dr = ray.Direction;
+
+            float denom = Vector3.Dot(dr, np);
+            if (denom != 0.0F)
+            {
+                distance = (Vector3.Dot(op, np) - Vector3.Dot(or, np)) / denom;
+                return distance > 0.0F;
+            }
+
+            distance = 0.0F;
+            return false;
+        }
+
+        /// <summary>
+        /// Whether the value specified is strictly positive.
         /// </summary>
         /// <param name="val">The value.</param>
-        /// <returns>Whether the value is positive.</returns>
-        private static int Positive(ref float val)
+        /// <returns>Whether the value is strictly positive.</returns>
+        private static bool Positive(float val)
         {
-            if (val > 0.0F)
-            {
-                return 1;
-            }
-
-            return 0;
+            return val > 0.0F;
         }
 
         /// <summary>
-        /// Returns the number of positive values and orders the values so that the positive values
-        /// come first, ordered by size.
+        /// Whether one or more of the input values are strictly positive. The output value is set
+        /// to the smallest strictly positive input value.
         /// </summary>
         /// <param name="val1">The first value.</param>
         /// <param name="val2">The second value.</param>
+        /// <param name="output">The output value.</param>
         /// <returns>The number of positive values.</returns>
-        private static int PositiveOrdered(ref float val1, ref float val2)
+        private static bool SmallestPositive(float val1, float val2, out float output)
         {
             if (val1 > 0.0F && val2 > 0.0F)
             {
-                if (val1 > val2)
-                {
-                    float temp = val1;
-                    val1 = val2;
-                    val2 = temp;
-                }
-
-                return 2;
+                output = Math.Min(val1, val2);
+                return true;
             }
             else if (val1 > 0.0F)
             {
-                return 1;
+                output = val1;
+                return true;
             }
             else if (val2 > 0.0F)
             {
-                float temp = val1;
-                val1 = val2;
-                val2 = temp;
-
-                return 1;
+                output = val2;
+                return true;
             }
 
-            return 0;
+            output = 0.0F;
+            return false;
         }
 
         /// <summary>

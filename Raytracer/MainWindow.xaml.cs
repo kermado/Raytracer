@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Input;
+using System;
 
 namespace Raytracer
 {
@@ -32,6 +33,13 @@ namespace Raytracer
             Render();
 
             KeyDown += OnKeyDown;
+            MouseUp += OnMouseUp;
+        }
+
+        private void OnMouseUp(object sender, MouseButtonEventArgs e)
+        {
+            var pos = e.GetPosition(Canvas);
+            Console.WriteLine(pos);
         }
 
         private void OnKeyDown(object sender, KeyEventArgs e)
@@ -62,8 +70,9 @@ namespace Raytracer
         {
             this.scene = new Scene();
             this.scene.Add(new Sphere(new Vector3(0.0F, 0.0F, 4.0F), 1.0F));
-            this.scene.Add(new PointLight(new Vector3(-4.0F, 4.0F, 0.0F), Color.Red, 100.0F));
-            this.scene.Add(new PointLight(new Vector3(4.0F, 4.0F, 0.0F), Color.Green, 100.0F));
+            this.scene.Add(new Plane(new Vector3(0.0F, -4.0F, 0.0F), new Vector3(0.0F, 1.0F, 0.0F)));
+            this.scene.Add(new PointLight(new Vector3(-4.0F, 4.0F, 0.0F), Color.Red, 500.0F));
+            this.scene.Add(new PointLight(new Vector3(4.0F, 4.0F, 0.0F), Color.Green, 500.0F));
             this.camera = new PerspectiveCamera();
         }
 
