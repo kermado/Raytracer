@@ -6,20 +6,20 @@ namespace Raytracer
     {
         public readonly Vector3 Center;
         public readonly float Radius;
-        public readonly Color Color;
+        public readonly Material Material;
 
         public Sphere(Vector3 center, float radius)
         {
             Center = center;
             Radius = radius;
-            Color = Color.White;
+            Material = Material.Default;
         }
 
-        public Sphere(Vector3 center, float radius, Color color)
+        public Sphere(Vector3 center, float radius, Material material)
         {
             Center = center;
             Radius = radius;
-            Color = color;
+            Material = material;
         }
     }
 }

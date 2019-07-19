@@ -7,14 +7,14 @@ namespace Raytracer
         public readonly Ray Ray;
         public readonly float Distance;
         public readonly Vector3 Normal;
-        public readonly Color Color;
+        public readonly Material Material;
 
-        public Intersection(Ray ray, float distance, Vector3 normal, Color color)
+        public Intersection(Ray ray, float distance, Vector3 normal, Material material)
         {
             Ray = ray;
             Distance = distance;
             Normal = normal;
-            Color = color;
+            Material = material;
         }
 
         public Vector3 Point()

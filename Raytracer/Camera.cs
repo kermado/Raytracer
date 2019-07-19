@@ -31,6 +31,16 @@ namespace Raytracer
         private float w;
 
         /// <summary>
+        /// The exposure, used for color correction.
+        /// </summary>
+        private float exposure;
+
+        /// <summary>
+        /// The gamma, used for color correction.
+        /// </summary>
+        private float gamma;
+
+        /// <summary>
         /// The right direction for the camera.
         /// </summary>
         public Vector3 Right
@@ -69,13 +79,33 @@ namespace Raytracer
         }
 
         /// <summary>
+        /// The exposure, used for color correction.
+        /// </summary>
+        public float Exposure
+        {
+            get { return this.exposure; }
+            set { this.exposure = value; }
+        }
+
+        /// <summary>
+        /// The gamma, used for color correction.
+        /// </summary>
+        public float Gamma
+        {
+            get { return this.gamma; }
+            set { this.gamma = value; }
+        }
+
+        /// <summary>
         /// Default constructor.
         /// </summary>
         public PerspectiveCamera()
         {
             this.transform = Matrix4x4.Identity;
-            this.vfov = (float)(Math.PI * 0.25);
+            this.vfov = (float)(Math.PI * 0.125);
             this.ar = (float)(16.0 / 9.0);
+            this.exposure = 1.0F;
+            this.gamma = 2.2F;
 
             UpdateScreenDimensions();
         }

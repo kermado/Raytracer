@@ -69,11 +69,12 @@ namespace Raytracer
         private void CreateScene()
         {
             this.scene = new Scene();
-            this.scene.Add(new Sphere(new Vector3(0.0F, 0.0F, 4.0F), 1.0F));
-            this.scene.Add(new Plane(new Vector3(0.0F, -4.0F, 0.0F), new Vector3(0.0F, 1.0F, 0.0F)));
-            this.scene.Add(new PointLight(new Vector3(-4.0F, 4.0F, 0.0F), Color.Red, 500.0F));
-            this.scene.Add(new PointLight(new Vector3(4.0F, 4.0F, 0.0F), Color.Green, 500.0F));
+            this.scene.Add(new Sphere(new Vector3(0.0F, 0.0F, 0.0F), 1.0F));
+            this.scene.Add(new Plane(new Vector3(0.0F, -1.0F, 0.0F), new Vector3(0.0F, 1.0F, 0.0F)));
+            //this.scene.Add(new DirectionalLight(-Vector3.UnitY, Color.White, 0.5F));
+            this.scene.Add(new PointLight(new Vector3(4.0F, 4.0F, -4.0F), Color.White, 500.0F));
             this.camera = new PerspectiveCamera();
+            this.camera.Position = new Vector3(0.0F, 0.0F, -4.0F);
         }
 
         private void CreatePixelBuffer()

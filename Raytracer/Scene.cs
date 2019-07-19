@@ -25,6 +25,11 @@ namespace Raytracer
         private List<PointLight> pointLights;
 
         /// <summary>
+        /// The list of directional light sources in the scene.
+        /// </summary>
+        private List<DirectionalLight> directionalLights;
+
+        /// <summary>
         /// The list of sphere primitives in the scene.
         /// </summary>
         private List<Sphere> spheres;
@@ -48,7 +53,9 @@ namespace Raytracer
         /// </summary>
         public Scene()
         {
+            this.background = Color.Black;
             this.pointLights = new List<PointLight>();
+            this.directionalLights = new List<DirectionalLight>();
             this.spheres = new List<Sphere>();
             this.planes = new List<Plane>();
         }
@@ -60,6 +67,15 @@ namespace Raytracer
         public void Add(PointLight light)
         {
             this.pointLights.Add(light);
+        }
+
+        /// <summary>
+        /// Adds a directional light source to the scene.
+        /// </summary>
+        /// <param name="light">The directional light.</param>
+        public void Add(DirectionalLight light)
+        {
+            this.directionalLights.Add(light);
         }
 
         /// <summary>
@@ -129,11 +145,11 @@ namespace Raytracer
                 {
                     case ShapeType.Sphere:
                         normal = Vector3.Normalize(point - this.spheres[minIndex].Center);
-                        intersection = new Intersection(ray, minDistance, normal, this.spheres[minIndex].Color);
+                        intersection = new Intersection(ray, minDistance, normal, this.spheres[minIndex].Material);
                         break;
                     case ShapeType.Plane:
                         normal = this.planes[minIndex].Normal;
-                        intersection = new Intersection(ray, minDistance, normal, this.planes[minIndex].Color);
+                        intersection = new Intersection(ray, minDistance, normal, this.planes[minIndex].Material);
                         break;
                 }
 
@@ -160,29 +176,44 @@ namespace Raytracer
             var intersection = new Intersection();
             if (Intersect(camera.RayForPixel(px, py, pw, ph), ref intersection))
             {
-                // Point of intersection.
-                var hitPoint = intersection.Point();
-                var hitNormal = intersection.Normal;
-                var shadowRayStart = hitPoint + intersection.Normal * bias;
+                // Shadows.
+                var shadowIntersection = new Intersection();
+                var shadowRayStart = intersection.Point() + intersection.Normal * bias;
 
                 // Direct lighting.
-                var color = Color.Black;
+                var color = intersection.Material.Ambient;
                 foreach (var light in this.pointLights)
                 {
-                    var shadowRayVec = light.Position - shadowRayStart;
-                    var shadowRayDistSq = shadowRayVec.LengthSquared();
-                    var shadowRayDir = Vector3.Normalize(shadowRayVec);
-                    if (Intersect(new Ray(shadowRayStart, shadowRayDir), ref intersection) == false || intersection.DistanceSq() > shadowRayDistSq)
+                    var lightVec = light.Position - shadowRayStart;
+                    var lightDistSq = lightVec.LengthSquared();
+                    var shadowRayDir = Vector3.Normalize(lightVec);
+                    if (Intersect(new Ray(shadowRayStart, shadowRayDir), ref shadowIntersection) == false || shadowIntersection.DistanceSq() > lightDistSq)
                     {
-                        // If we hit something on the way to the light then we're in shadow.
-                        // Otherwise, we have visibility from the light.
-                        var intensity = light.Intensity / (4.0F * (float)Math.PI * shadowRayDistSq); // Inverse square law.
-                        intensity *= Math.Max(0.0F, Vector3.Dot(shadowRayDir, hitNormal)); // Surface effect.
-                        color += light.Color * intersection.Color * intensity;
+                        var intensity = light.Intensity / (4.0F * (float)Math.PI * lightDistSq); // Inverse square law.
+                        intensity *= Math.Max(0.0F, Vector3.Dot(shadowRayDir, intersection.Normal)); // Surface effect.
+                        var lightColor = light.Color * intensity;
+                        var diffuse = lightColor * intersection.Material.Diffuse;
+                        var halfVector = Vector3.Normalize(shadowRayDir - intersection.Ray.Direction);
+                        var specular = lightColor * intersection.Material.Specular * (float)Math.Pow(Math.Max(0.0F, Vector3.Dot(intersection.Normal, halfVector)), intersection.Material.Shininess);
+                        color += diffuse + specular;
                     }
                 }
 
-                return Color.Clamp(color);
+                foreach (var light in this.directionalLights)
+                {
+                    var shadowRayDir = -light.Direction;
+                    if (Intersect(new Ray(shadowRayStart, shadowRayDir), ref shadowIntersection) == false)
+                    {
+                        var intensity = light.Intensity * Math.Max(0.0F, Vector3.Dot(shadowRayDir, intersection.Normal)); // Surface effect.
+                        var lightColor = light.Color * intensity;
+                        var diffuse = lightColor * intersection.Material.Diffuse;
+                        var halfVector = Vector3.Normalize(shadowRayDir - intersection.Ray.Direction);
+                        var specular = lightColor * intersection.Material.Specular * (float)Math.Pow(Math.Max(0.0F, Vector3.Dot(intersection.Normal, halfVector)), intersection.Material.Shininess);
+                        color += diffuse + specular;
+                    }
+                }
+
+                return Color.Clamp(Color.CorrectGamma(color, camera.Exposure, 1.0F / camera.Gamma));
             }
 
             return this.background;

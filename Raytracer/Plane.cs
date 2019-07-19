@@ -6,20 +6,20 @@ namespace Raytracer
     {
         public readonly Vector3 Origin;
         public readonly Vector3 Normal;
-        public readonly Color Color;
+        public readonly Material Material;
 
-        public Plane(Vector3 origin, Vector3 normal, Color color)
+        public Plane(Vector3 origin, Vector3 normal, Material material)
         {
             Origin = origin;
             Normal = normal;
-            Color = color;
+            Material = material;
         }
 
         public Plane(Vector3 origin, Vector3 normal)
         {
             Origin = origin;
             Normal = normal;
-            Color = Color.White;
+            Material = Material.Default;
         }
     }
 }

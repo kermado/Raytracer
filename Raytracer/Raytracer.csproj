@@ -64,8 +64,10 @@
     </ApplicationDefinition>
     <Compile Include="Camera.cs" />
     <Compile Include="Color.cs" />
+    <Compile Include="DirectionalLight.cs" />
     <Compile Include="Intersect.cs" />
     <Compile Include="Intersection.cs" />
+    <Compile Include="Material.cs" />
     <Compile Include="Plane.cs" />
     <Compile Include="PointLight.cs" />
     <Compile Include="Ray.cs" />
