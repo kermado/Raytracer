@@ -160,6 +160,72 @@ namespace Raytracer
         }
 
         /// <summary>
+        /// Traces the specified view ray, reflecting up to <paramref name="maxDepth"/> times.
+        /// </summary>
+        /// <param name="viewRay">The view ray.</param>
+        /// <param name="depth">The maximum number of reflections.</param>
+        /// <returns>The resulting color</returns>
+        public Color Trace(Ray viewRay, int depth, int maxDepth)
+        {
+            const float bias = 0.0001F; // Bias to prevent self-shadowing (shadow acne).
+
+            var color = Color.Black;
+
+            // Visibility.
+            var viewIntersection = new Intersection();
+            if (Intersect(viewRay, ref viewIntersection))
+            {
+                var surfacePoint = viewIntersection.Point();
+                var surfaceNormal = viewIntersection.Normal;
+                var surfaceMaterial = viewIntersection.Material;
+
+                var biasedSurfacePoint = surfacePoint + surfaceNormal * bias;
+
+                // Shadows.
+                var shadowIntersection = new Intersection();
+                foreach (var light in this.pointLights)
+                {
+                    // Do we hit anything on the way to the light?
+                    var shadowRayVector = light.Position - biasedSurfacePoint;
+                    var shadowRayLength = shadowRayVector.Length();
+                    var shadowRayDirection = shadowRayVector / shadowRayLength;
+                    if (Intersect(new Ray(biasedSurfacePoint, shadowRayDirection), ref shadowIntersection) == false || shadowIntersection.Distance > shadowRayLength)
+                    {
+                        // We have a clear path to the light.
+                        var lightColorIntensity = light.ColorIntensity(shadowRayLength * shadowRayLength);
+                        var diffuse = surfaceMaterial.DiffuseBRDF(shadowRayDirection, surfaceNormal);
+                        var specular = surfaceMaterial.SpecularBRDF(-viewRay.Direction, shadowRayDirection, surfaceNormal);
+                        color += lightColorIntensity * (diffuse + specular);
+                    }
+                }
+                
+                foreach (var light in this.directionalLights)
+                {
+                    var shadowRayDirection = -light.Direction;
+                    if (Intersect(new Ray(biasedSurfacePoint, shadowRayDirection), ref shadowIntersection) == false)
+                    {
+                        var lightColorIntensity = light.Color * light.Intensity;
+                        var diffuse = surfaceMaterial.DiffuseBRDF(shadowRayDirection, surfaceNormal);
+                        var specular = surfaceMaterial.SpecularBRDF(-viewRay.Direction, shadowRayDirection, surfaceNormal);
+                        color += lightColorIntensity * (diffuse + specular);
+                    }
+                }
+
+                // Reflection.
+                if (depth < maxDepth && surfaceMaterial.Reflectivity > 0.0F)
+                {
+                    color += Trace(new Ray(biasedSurfacePoint, Vector3.Reflect(viewRay.Direction, surfaceNormal)), depth + 1, maxDepth) * surfaceMaterial.Reflectivity;
+                }
+            }
+            else
+            {
+                color = this.background;
+            }
+
+            return color;
+        }
+
+        /// <summary>
         /// Determines the color for the specified pixel.
         /// </summary>
         /// <param name="camera">The camera.</param>
@@ -170,53 +236,8 @@ namespace Raytracer
         /// <returns>The color for the pixel.</returns>
         public Color PixelColor(PerspectiveCamera camera, int px, int py, int pw, int ph)
         {
-            const float bias = 0.0001F; // Bias to prevent self-shadowing (shadow acne).
-
-            // Ray from camera.
-            var intersection = new Intersection();
-            if (Intersect(camera.RayForPixel(px, py, pw, ph), ref intersection))
-            {
-                // Shadows.
-                var shadowIntersection = new Intersection();
-                var shadowRayStart = intersection.Point() + intersection.Normal * bias;
-
-                // Direct lighting.
-                var color = intersection.Material.Ambient;
-                foreach (var light in this.pointLights)
-                {
-                    var lightVec = light.Position - shadowRayStart;
-                    var lightDistSq = lightVec.LengthSquared();
-                    var shadowRayDir = Vector3.Normalize(lightVec);
-                    if (Intersect(new Ray(shadowRayStart, shadowRayDir), ref shadowIntersection) == false || shadowIntersection.DistanceSq() > lightDistSq)
-                    {
-                        var intensity = light.Intensity / (4.0F * (float)Math.PI * lightDistSq); // Inverse square law.
-                        intensity *= Math.Max(0.0F, Vector3.Dot(shadowRayDir, intersection.Normal)); // Surface effect.
-                        var lightColor = light.Color * intensity;
-                        var diffuse = lightColor * intersection.Material.Diffuse;
-                        var halfVector = Vector3.Normalize(shadowRayDir - intersection.Ray.Direction);
-                        var specular = lightColor * intersection.Material.Specular * (float)Math.Pow(Math.Max(0.0F, Vector3.Dot(intersection.Normal, halfVector)), intersection.Material.Shininess);
-                        color += diffuse + specular;
-                    }
-                }
-
-                foreach (var light in this.directionalLights)
-                {
-                    var shadowRayDir = -light.Direction;
-                    if (Intersect(new Ray(shadowRayStart, shadowRayDir), ref shadowIntersection) == false)
-                    {
-                        var intensity = light.Intensity * Math.Max(0.0F, Vector3.Dot(shadowRayDir, intersection.Normal)); // Surface effect.
-                        var lightColor = light.Color * intensity;
-                        var diffuse = lightColor * intersection.Material.Diffuse;
-                        var halfVector = Vector3.Normalize(shadowRayDir - intersection.Ray.Direction);
-                        var specular = lightColor * intersection.Material.Specular * (float)Math.Pow(Math.Max(0.0F, Vector3.Dot(intersection.Normal, halfVector)), intersection.Material.Shininess);
-                        color += diffuse + specular;
-                    }
-                }
-
-                return Color.Clamp(Color.CorrectGamma(color, camera.Exposure, 1.0F / camera.Gamma));
-            }
-
-            return this.background;
+            var color = Trace(camera.RayForPixel(px, py, pw, ph), 0, 10);
+            return Color.Clamp(Color.CorrectGamma(color, camera.Exposure, 1.0F / camera.Gamma));
         }
     }
 }

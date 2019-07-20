@@ -15,5 +15,10 @@ namespace Raytracer
             Color = color;
             Intensity = intensity;
         }
+
+        public Color ColorIntensity(float distanceSq)
+        {
+            return Color * (Intensity / (4.0F * (float)Math.PI * distanceSq));
+        }
     }
 }
