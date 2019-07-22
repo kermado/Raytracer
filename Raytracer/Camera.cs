@@ -123,6 +123,24 @@ namespace Raytracer
         }
 
         /// <summary>
+        /// Orients the camera to look at the specified point.
+        /// </summary>
+        /// <param name="targetPoint">The target point.</param>
+        /// <param name="upHint">A hint for the up vector.</param>
+        public void LookAt(Vector3 targetPoint, Vector3 upHint)
+        {
+            var zaxis = Vector3.Normalize(targetPoint - Position);
+            var xaxis = Vector3.Normalize(Vector3.Cross(upHint, zaxis));
+            var yaxis = Vector3.Normalize(Vector3.Cross(zaxis, xaxis));
+            var origin = this.transform.Translation;
+
+            this.transform = new Matrix4x4(xaxis.X,  xaxis.Y,  xaxis.Z,  0.0F,
+                                           yaxis.X,  yaxis.Y,  yaxis.Z,  0.0F,
+                                           zaxis.X,  zaxis.Y,  zaxis.Z,  0.0F,
+                                           origin.X, origin.Y, origin.Z, 1.0F);
+        }
+
+        /// <summary>
         /// Creates a ray from the camera that passes through the screen door at the specified point
         /// in screen coordinates.
         /// </summary>

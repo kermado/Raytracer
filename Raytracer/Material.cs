@@ -3,7 +3,7 @@ using System.Numerics;
 
 namespace Raytracer
 {
-    public struct Material
+    public readonly struct Material
     {
         public readonly Color Ambient;
         public readonly Color Diffuse;
@@ -11,8 +11,10 @@ namespace Raytracer
         public readonly float Albedo;
         public readonly float Shininess;
         public readonly float Reflectivity;
+        public readonly float Transparency;
+        public readonly float RefractiveIndex;
 
-        public Material(Color ambient, Color diffuse, Color specular, float albedo, float shininess, float reflectivity)
+        public Material(Color ambient, Color diffuse, Color specular, float albedo, float shininess, float reflectivity, float transparency, float refractiveIndex)
         {
             Ambient = ambient;
             Diffuse = diffuse;
@@ -20,6 +22,8 @@ namespace Raytracer
             Albedo = albedo;
             Shininess = shininess;
             Reflectivity = reflectivity;
+            Transparency = transparency;
+            RefractiveIndex = refractiveIndex;
         }
 
         /// <summary>
@@ -46,10 +50,11 @@ namespace Raytracer
             return Specular * (float)Math.Pow(Math.Max(0.0F, Vector3.Dot(halfVector, surfaceNormal)), Shininess);
         }
 
-        public static readonly Material Default = new Material(new Color(0.005F, 0.005F, 0.005F), new Color(0.6F, 0.6F, 0.6F), new Color(1.0F, 1.0F, 1.0F), 0.5F, 25.0F, 0.0F);
-        public static readonly Material Red = new Material(new Color(0.005F, 0.0F, 0.0F), Color.Red, Color.White, 0.5F, 25.0F, 0.0F);
-        public static readonly Material Green = new Material(new Color(0.0F, 0.005F, 0.0F), Color.Green, Color.White, 0.5F, 25.0F, 0.0F);
-        public static readonly Material Blue = new Material(new Color(0.0F, 0.0F, 0.005F), Color.Blue, Color.White, 0.5F, 25.0F, 0.0F);
-        public static readonly Material Mirror = new Material(Color.Black, Color.Black, Color.Black, 0.0F, 0.0F, 1.0F);
+        public static readonly Material Default = new Material(new Color(0.005F, 0.005F, 0.005F), new Color(0.6F, 0.6F, 0.6F), new Color(1.0F, 1.0F, 1.0F), 0.5F, 25.0F, 0.0F, 0.0F, 1.0F);
+        public static readonly Material Red = new Material(new Color(0.005F, 0.0F, 0.0F), Color.Red, Color.Black, 0.5F, 0.0F, 0.0F, 0.0F, 1.0F);
+        public static readonly Material Green = new Material(new Color(0.0F, 0.005F, 0.0F), Color.Green, Color.Black, 0.5F, 0.0F, 0.0F, 0.0F, 1.0F);
+        public static readonly Material Blue = new Material(new Color(0.0F, 0.0F, 0.005F), Color.Blue, Color.Black, 0.5F, 0.0F, 0.0F, 0.0F, 1.0F);
+        public static readonly Material Mirror = new Material(Color.Black, Color.White, Color.White, 0.01F, 5000.0F, 0.95F, 0.0F, 1.0F);
+        public static readonly Material Glass = new Material(Color.Black, Color.White, Color.White, 0.01F, 5000.0F, 0.0F, 1.0F, 1.52F);
     }
 }

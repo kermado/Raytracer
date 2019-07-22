@@ -13,7 +13,7 @@ namespace Raytracer
         /// <param name="sphere">The sphere.</param>
         /// <param name="distance">The distance along the ray at which the first point of intersection occurs.</param>
         /// <returns>Whether the ray intersects the sphere.</returns>
-        public static bool RaySphere(Ray ray, Sphere sphere, out float distance)
+        public static bool RaySphere(in Ray ray, in Sphere sphere, out float distance)
         {
             // Transform the start of the ray to the sphere's local coordinate system, where the
             // sphere's center is positioned at the origin.
@@ -21,6 +21,20 @@ namespace Raytracer
             var dr = ray.Direction;
             var rs = sphere.Radius;
 
+            // Check whether the ray intersects the sphere.
+            // We can do this more efficiently than solving a quadratic.
+            var rsrs = rs * rs;
+            var srsr = sr.LengthSquared();
+            var drdr = dr.LengthSquared();
+            var srdr = Vector3.Dot(sr, dr);
+            var srdrsq = srdr * srdr;
+            if (srsr - 2.0F * srdrsq + drdr * srdrsq > rsrs)
+            {
+                distance = 0.0F;
+                return false;
+            }
+
+#if FAST_RAY_SPHERE
             // A point on the sphere is parameterized by ||p|| = r, where r is the radius.
             // A point on a ray is parameterized by p = s + d*l, where s is the start of the ray,
             // d is the unit vector direction of the ray and l is some length along the ray.
@@ -33,11 +47,30 @@ namespace Raytracer
             // We solve this quadratic for l, the length along the ray at the points of
             // intersection.
             float distance2;
-            switch (SolveQuadratic(1.0F, 2.0F * Vector3.Dot(sr, dr), Vector3.Dot(sr, sr) - rs, out distance, out distance2))
+            switch (SolveQuadratic(1.0F, 2.0F * srdr, srsr - rs, out distance, out distance2))
             {
                 case 1: return Positive(distance);
                 default: return SmallestPositive(distance, distance2, out distance);
             }
+#else
+            // This method is slower but more precise and can help eliminate shadow acne for cases where the sphere is
+            // far away (i.e. sr is large). In practice, I have found that it isn't much more expensive than the trivial
+            // method above and so it is used by default. This method is descrived in Ray Tracing Gems by Eric Haines
+            // and Tomas Akenine-Moller.
+            var bprime = -srdr;
+            var discriminant = rsrs - (sr + (bprime / drdr) * dr).LengthSquared();
+            if (discriminant > 0.0F)
+            {
+                var c = srsr - rsrs;
+                var q = bprime + (float)Math.Sign(bprime) * (float)Math.Sqrt(drdr * discriminant);
+                return SmallestPositive(c / q, q / drdr, out distance);
+            }
+            else
+            {
+                distance = 0.0F;
+                return false;
+            }
+#endif
         }
 
         /// <summary>
@@ -47,7 +80,7 @@ namespace Raytracer
         /// <param name="plane">The plane.</param>
         /// <param name="distance">The distance along the ray at which the point of intersection occurs.</param>
         /// <returns>Whether the ray intersects the plane.</returns>
-        public static bool RayPlane(Ray ray, Plane plane, out float distance)
+        public static bool RayPlane(in Ray ray, in Plane plane, out float distance)
         {
             // A point on a plane is parameterized by (p - o).n = 0, where n is the normal to the
             // plane and o is a point on the plane.

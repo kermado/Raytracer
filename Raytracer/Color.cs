@@ -2,7 +2,7 @@
 
 namespace Raytracer
 {
-    public struct Color
+    public readonly struct Color
     {
         public readonly float R;
         public readonly float G;

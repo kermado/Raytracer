@@ -3,7 +3,7 @@ using System.Numerics;
 
 namespace Raytracer
 {
-    public struct PointLight
+    public readonly struct PointLight
     {
         public readonly Vector3 Position;
         public readonly Color Color;

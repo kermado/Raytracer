@@ -2,7 +2,7 @@
 
 namespace Raytracer
 {
-    public struct Ray
+    public readonly struct Ray
     {
         public readonly Vector3 Start;
         public readonly Vector3 Direction;

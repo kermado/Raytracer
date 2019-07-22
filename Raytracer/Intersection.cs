@@ -2,7 +2,7 @@
 
 namespace Raytracer
 {
-    public struct Intersection
+    public readonly struct Intersection
     {
         public readonly Ray Ray;
         public readonly float Distance;

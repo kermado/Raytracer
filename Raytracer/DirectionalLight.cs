@@ -2,7 +2,7 @@
 
 namespace Raytracer
 {
-    public struct DirectionalLight
+    public readonly struct DirectionalLight
     {
         public readonly Vector3 Direction;
         public readonly Color Color;

@@ -2,7 +2,7 @@
 
 namespace Raytracer
 {
-    public struct Plane
+    public readonly struct Plane
     {
         public readonly Vector3 Origin;
         public readonly Vector3 Normal;
@@ -20,6 +20,16 @@ namespace Raytracer
             Origin = origin;
             Normal = normal;
             Material = Material.Default;
+        }
+
+        public Vector3 ReflectiveNormal(in Vector3 incidentDirection)
+        {
+            if (Vector3.Dot(Normal, incidentDirection) <= 0.0F)
+            {
+                return Normal;
+            }
+
+            return -Normal;
         }
     }
 }

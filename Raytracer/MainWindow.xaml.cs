@@ -1,9 +1,11 @@
-﻿using System.Numerics;
+﻿using System;
+using System.Numerics;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Input;
-using System;
 
 namespace Raytracer
 {
@@ -18,6 +20,7 @@ namespace Raytracer
         private int height;
         private byte[] pixelBuffer;
         private WriteableBitmap bitmap;
+        private CancellationTokenSource tokenSource;
 
         public MainWindow()
         {
@@ -30,10 +33,15 @@ namespace Raytracer
             CreateBitmap();
 
             CreateScene();
-            Render();
 
+            Loaded += OnLoaded;
             KeyDown += OnKeyDown;
             MouseUp += OnMouseUp;
+        }
+
+        private void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            Render();
         }
 
         private void OnMouseUp(object sender, MouseButtonEventArgs e)
@@ -44,7 +52,7 @@ namespace Raytracer
 
         private void OnKeyDown(object sender, KeyEventArgs e)
         {
-            const float speed = 0.1F;
+            const float speed = 0.5F;
 
             if (e.Key == Key.Up || e.Key == Key.W)
             {
@@ -69,15 +77,54 @@ namespace Raytracer
         private void CreateScene()
         {
             this.scene = new Scene();
+
+            //this.scene.Add(new Sphere(new Vector3(0.0F, 1.0F, 6.0F), 1.0F, Material.Default));
+            //this.scene.Add(new Plane(new Vector3(0.0F, 0.0F, 15.0F), new Vector3(0.0F, 0.0F, -1.0F), Material.Default));
+            //this.scene.Add(new Sphere(new Vector3(1.0F, 1.0F, 4.0F), 1.0F, Material.Glass));
+            //this.scene.Add(new Plane(new Vector3(0.0F, -1.0F, 0.0F), new Vector3(0.0F, 1.0F, 0.0F)));
+            
+            this.scene.Add(new Sphere(new Vector3(0.0F, 0.0F, -2.0F), 1.0F, Material.Mirror));
+            this.scene.Add(new Sphere(new Vector3(-2.0F, 0.0F, -2.0F), 1.0F, Material.Mirror));
+            this.scene.Add(new Sphere(new Vector3(2.0F, 0.0F, -2.0F), 1.0F, Material.Mirror));
+
             this.scene.Add(new Sphere(new Vector3(0.0F, 0.0F, 0.0F), 1.0F, Material.Mirror));
             this.scene.Add(new Sphere(new Vector3(-2.0F, 0.0F, 0.0F), 1.0F, Material.Mirror));
             this.scene.Add(new Sphere(new Vector3(2.0F, 0.0F, 0.0F), 1.0F, Material.Mirror));
-            this.scene.Add(new Plane(new Vector3(0.0F, -1.0F, 0.0F), new Vector3(0.0F, 1.0F, 0.0F)));
-            //this.scene.Add(new DirectionalLight(-Vector3.UnitY, Color.White, 0.5F));
-            //this.scene.Add(new PointLight(new Vector3(4.0F, 4.0F, -4.0F), Color.Red, 100.0F));
-            this.scene.Add(new PointLight(new Vector3(-4.0F, 4.0F, -4.0F), Color.White, 500.0F));
+
+            this.scene.Add(new Sphere(new Vector3(0.0F, 0.0F, 2.0F), 1.0F, Material.Mirror));
+            this.scene.Add(new Sphere(new Vector3(-2.0F, 0.0F, 2.0F), 1.0F, Material.Mirror));
+            this.scene.Add(new Sphere(new Vector3(2.0F, 0.0F, 2.0F), 1.0F, Material.Mirror));
+
+            this.scene.Add(new Sphere(new Vector3(1.0F, (float)Math.Sqrt(2.0F), -1.0F), 1.0F, Material.Mirror));
+            this.scene.Add(new Sphere(new Vector3(-1.0F, (float)Math.Sqrt(2.0F), -1.0F), 1.0F, Material.Mirror));
+
+            this.scene.Add(new Sphere(new Vector3(1.0F, (float)Math.Sqrt(2.0F), 1.0F), 1.0F, Material.Mirror));
+            this.scene.Add(new Sphere(new Vector3(-1.0F, (float)Math.Sqrt(2.0F), 1.0F), 1.0F, Material.Mirror));
+
+            this.scene.Add(new Sphere(new Vector3(0.0F, (float)Math.Sqrt(2.0F) * 2.0F, 0.0F), 1.0F, Material.Mirror));
+
+            this.scene.Add(new Plane(new Vector3(0.0F, -1.0F, 0.0F), new Vector3(0.0F, 1.0F, 0.0F), Material.Default));
+            this.scene.Add(new Plane(new Vector3(0.0F, 0.0F, 15.0F), new Vector3(0.0F, 0.0F, -1.0F), Material.Default));
+            this.scene.Add(new Plane(new Vector3(-15.0F, 0.0F, 0.0F), new Vector3(1.0F, 0.0F, 0.0F), Material.Red));
+            this.scene.Add(new Plane(new Vector3(15.0F, 0.0F, 0.0F), new Vector3(-1.0F, 0.0F, 0.0F), Material.Green));
+
+            this.scene.Add(new Sphere(new Vector3(8.0F, 0.0F, 0.0F), 1.0F, Material.Glass));
+            this.scene.Add(new Sphere(new Vector3(8.0F, 2.0F, 0.0F), 1.0F, Material.Glass));
+            this.scene.Add(new Sphere(new Vector3(8.0F, 4.0F, 0.0F), 1.0F, Material.Glass));
+
+            this.scene.Add(new Sphere(new Vector3(-8.0F, 0.0F, 0.0F), 1.0F, Material.Glass));
+            this.scene.Add(new Sphere(new Vector3(-8.0F, 2.0F, 0.0F), 1.0F, Material.Glass));
+            this.scene.Add(new Sphere(new Vector3(-8.0F, 4.0F, 0.0F), 1.0F, Material.Glass));
+
+            this.scene.Add(new PointLight(new Vector3(-8.0F, 8.0F, 0.0F), Color.White, 2000.0F));
+            this.scene.Add(new PointLight(new Vector3(8.0F, 8.0F, 0.0F), Color.White, 2000.0F));
+            this.scene.Add(new PointLight(new Vector3(0.0F, 8.0F, -8.0F), Color.White, 2000.0F));
+
+            //this.scene.Add(new DirectionalLight(Vector3.Normalize(new Vector3(0.0F, -1.0F, 1.0F)), Color.White, 1.0F));
+
             this.camera = new PerspectiveCamera();
-            this.camera.Position = new Vector3(0.0F, 0.0F, -4.0F);
+            this.camera.Position = new Vector3(0.0F, 8.0F, -20.0F);
+            this.camera.LookAt(new Vector3(0.0F, 1.0F, 0.0F), Vector3.UnitY);
         }
 
         private void CreatePixelBuffer()
@@ -87,19 +134,89 @@ namespace Raytracer
 
         private void Render()
         {
-            int index = 0;
-            for (int row = 0; row < this.height; ++row)
+            if (this.tokenSource != null)
             {
-                for (int col = 0; col < this.width; ++col)
-                {
-                    var color = this.scene.PixelColor(this.camera, col, row, this.width, this.height);
-                    this.pixelBuffer[index++] = (byte)(color.R * 255);
-                    this.pixelBuffer[index++] = (byte)(color.G * 255);
-                    this.pixelBuffer[index++] = (byte)(color.B * 255);
-                }
+                this.tokenSource.Cancel();
+                this.tokenSource.Dispose();
             }
 
-            UpdateBitmap();
+            this.tokenSource = new CancellationTokenSource();
+            var token = this.tokenSource.Token;
+
+            var taskCount = 20;
+            var rowsPerTask = this.height / taskCount;
+            var remainder = this.height - rowsPerTask * taskCount;
+
+            for (int i = 0; i < taskCount; ++i)
+            {
+                int start = i * rowsPerTask;
+                int end = start + rowsPerTask;
+                if (i == taskCount - 1) { end += remainder; }
+
+                Task.Run(() =>
+                {
+                    try
+                    {
+                        token.ThrowIfCancellationRequested();
+                        RenderRows(start, end, token);
+                        Dispatcher.BeginInvoke(new Action<int, int>(UpdateBitmapRows), start, end);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        Console.WriteLine("Cancelled");
+                    }
+                }, token);
+            }
+        }
+
+        private void RenderRows(int startRowInclusive, int endRowExclusive, CancellationToken token)
+        {
+            for (int row = startRowInclusive; row < endRowExclusive; ++row)
+            {
+                token.ThrowIfCancellationRequested();
+                RenderRow(row);
+            }
+        }
+
+        private void RenderRow(int row)
+        {
+            var index = this.width * row * 3;
+            for (int col = 0; col < this.width; ++col)
+            {
+                var color = this.scene.PixelColor(this.camera, col, row, this.width, this.height);
+                this.pixelBuffer[index++] = (byte)(color.R * 255);
+                this.pixelBuffer[index++] = (byte)(color.G * 255);
+                this.pixelBuffer[index++] = (byte)(color.B * 255);
+            }
+        }
+
+        private unsafe void UpdateBitmapRows(int startRowInclusive, int endRowExclusive)
+        {
+            this.bitmap.Lock();
+
+            try
+            {
+                byte* ptr = (byte*)this.bitmap.BackBuffer.ToPointer();
+
+                int index = startRowInclusive * this.width * 3;
+                ptr += index;
+
+                for (int row = startRowInclusive; row < endRowExclusive; ++row)
+                {
+                    for (int col = 0; col < this.width; ++col)
+                    {
+                        *(ptr++) = this.pixelBuffer[index++];
+                        *(ptr++) = this.pixelBuffer[index++];
+                        *(ptr++) = this.pixelBuffer[index++];
+                    }
+                }
+
+                this.bitmap.AddDirtyRect(new Int32Rect(0, startRowInclusive, this.width, endRowExclusive - startRowInclusive));
+            }
+            finally
+            {
+                this.bitmap.Unlock();
+            }
         }
 
         private unsafe void UpdateBitmap()

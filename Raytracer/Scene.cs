@@ -14,6 +14,8 @@ namespace Raytracer
             Plane
         }
 
+        private static readonly float bias = 0.0001F;
+
         /// <summary>
         /// The background color for the scene.
         /// </summary>
@@ -64,7 +66,7 @@ namespace Raytracer
         /// Adds a point light source to the scene.
         /// </summary>
         /// <param name="light">The point light.</param>
-        public void Add(PointLight light)
+        public void Add(in PointLight light)
         {
             this.pointLights.Add(light);
         }
@@ -73,7 +75,7 @@ namespace Raytracer
         /// Adds a directional light source to the scene.
         /// </summary>
         /// <param name="light">The directional light.</param>
-        public void Add(DirectionalLight light)
+        public void Add(in DirectionalLight light)
         {
             this.directionalLights.Add(light);
         }
@@ -82,7 +84,7 @@ namespace Raytracer
         /// Adds a sphere to the scene.
         /// </summary>
         /// <param name="sphere">The sphere.</param>
-        public void Add(Sphere sphere)
+        public void Add(in Sphere sphere)
         {
             this.spheres.Add(sphere);
         }
@@ -91,7 +93,7 @@ namespace Raytracer
         /// Adds a plane to the scene.
         /// </summary>
         /// <param name="plane">The plane.</param>
-        public void Add(Plane plane)
+        public void Add(in Plane plane)
         {
             this.planes.Add(plane);
         }
@@ -102,7 +104,7 @@ namespace Raytracer
         /// <param name="ray">The ray.</param>
         /// <param name="intersection">The intersection for the nearest object.</param>
         /// <returns>Whether the ray intersected an object.</returns>
-        public bool Intersect(Ray ray, ref Intersection intersection)
+        private bool Intersect(in Ray ray, ref Intersection intersection)
         {
             float minDistance = float.MaxValue;
             ShapeType minShapeType = ShapeType.None;
@@ -144,11 +146,11 @@ namespace Raytracer
                 switch (minShapeType)
                 {
                     case ShapeType.Sphere:
-                        normal = Vector3.Normalize(point - this.spheres[minIndex].Center);
+                        normal = this.spheres[minIndex].ReflectiveNormal(point, ray.Direction);
                         intersection = new Intersection(ray, minDistance, normal, this.spheres[minIndex].Material);
                         break;
                     case ShapeType.Plane:
-                        normal = this.planes[minIndex].Normal;
+                        normal = this.planes[minIndex].ReflectiveNormal(ray.Direction);
                         intersection = new Intersection(ray, minDistance, normal, this.planes[minIndex].Material);
                         break;
                 }
@@ -160,15 +162,104 @@ namespace Raytracer
         }
 
         /// <summary>
+        /// Determines the transmission direction due to refraction.
+        /// </summary>
+        /// <param name="incidentDirection">The incident direction of the ray hitting the surface.</param>
+        /// <param name="surfaceNormal">The normal at the surface point.</param>
+        /// <param name="refractiveIndex">The refractive index of the material.</param>
+        /// <param name="transmissionDirection">The transmission direction.</param>
+        /// <returns>True if transmission is possible, false if there is total internal reflection.</returns>
+        private bool Refract(Vector3 incidentDirection, Vector3 surfaceNormal, float refractiveIndex, out Vector3 transmissionDirection)
+        {
+            float cosi = Math.Min(1.0F, Math.Max(-1.0F, Vector3.Dot(incidentDirection, surfaceNormal)));
+            float fior = 1.0F; // Refractive index of the first medium.
+            float sior = refractiveIndex; // Refractive index of the second medium.
+
+            if (cosi < 0.0F) // Ray goes from first medium into second medium.
+            {
+                cosi = -cosi;
+            }
+            else // Ray goes from second medium into first medium.
+            {
+                float temp = fior;
+                fior = sior;
+                sior = temp;
+
+                surfaceNormal = -surfaceNormal;
+            }
+
+            float ratio = fior / sior;
+            float k = 1.0F - ratio * ratio * (1.0F - cosi * cosi);
+            if (k > 0.0F)
+            {
+                transmissionDirection = (incidentDirection * ratio) + surfaceNormal * (ratio * cosi - (float)Math.Sqrt(k));
+                return true;
+            }
+
+            // If k < 0 then we have total internal reflection.
+            // If k = 0 then the refracted ray is parallel to the surface normal.
+            transmissionDirection = Vector3.Zero;
+            return false;
+        }
+
+        /// <summary>
+        /// Casts a sequence of shadow rays to the light and determines the transmittance.
+        /// </summary>
+        /// <remarks>
+        /// The transmittance will be 1 if there is a completely unimpeeded path from the surface point to the light.
+        /// Conversely, the transmittance will be 0 if the path from the surface point to the light is completely
+        /// blocked. The transmittance will be somewhere inbetween if there is a sequence of transparent objects between
+        /// the surface point and the light.
+        /// </remarks>
+        /// <param name="biasedSurfacePoint">The biased point on the surface of the object.</param>
+        /// <param name="lightDirection">The direction from the surface point to the light.</param>
+        /// <param name="lightDistance">The distance from the surface point to the light.</param>
+        /// <returns>The transmittance to the light.</returns>
+        private float Transmittance(in Vector3 biasedSurfacePoint, in Vector3 lightDirection, float lightDistance)
+        {
+            var intersection = new Intersection();
+
+            var rayStart = biasedSurfacePoint;
+
+            float transmittance = 1.0F;
+            while (transmittance > 0.0F)
+            {
+                if (Intersect(new Ray(rayStart, lightDirection), ref intersection))
+                {
+                    if (intersection.Distance < lightDistance)
+                    {
+                        transmittance *= intersection.Material.Transparency;
+                    }
+                    else
+                    {
+                        // We're already beyond the light, so no point in continuing.
+                        break;
+                    }
+
+                    // We must start again from the point that we hit.
+                    // Note that the intersection normal is the reflective normal and so we must bias the point on the
+                    // surface by the negative of that normal in order to travel through the surface.
+                    rayStart = intersection.Point() - intersection.Normal * bias;
+                    lightDistance -= intersection.Distance;
+                }
+                else
+                {
+                    // No intersection, so we are done.
+                    break;
+                }
+            }
+
+            return transmittance;
+        }
+
+        /// <summary>
         /// Traces the specified view ray, reflecting up to <paramref name="maxDepth"/> times.
         /// </summary>
         /// <param name="viewRay">The view ray.</param>
         /// <param name="depth">The maximum number of reflections.</param>
         /// <returns>The resulting color</returns>
-        public Color Trace(Ray viewRay, int depth, int maxDepth)
+        public Color Trace(in Ray viewRay, int depth, int maxDepth)
         {
-            const float bias = 0.0001F; // Bias to prevent self-shadowing (shadow acne).
-
             var color = Color.Black;
 
             // Visibility.
@@ -179,42 +270,56 @@ namespace Raytracer
                 var surfaceNormal = viewIntersection.Normal;
                 var surfaceMaterial = viewIntersection.Material;
 
+                // We must bias the surface point in order to prevent self-shadowing.
                 var biasedSurfacePoint = surfacePoint + surfaceNormal * bias;
 
                 // Shadows.
-                var shadowIntersection = new Intersection();
                 foreach (var light in this.pointLights)
                 {
-                    // Do we hit anything on the way to the light?
-                    var shadowRayVector = light.Position - biasedSurfacePoint;
-                    var shadowRayLength = shadowRayVector.Length();
-                    var shadowRayDirection = shadowRayVector / shadowRayLength;
-                    if (Intersect(new Ray(biasedSurfacePoint, shadowRayDirection), ref shadowIntersection) == false || shadowIntersection.Distance > shadowRayLength)
+                    var lightVector = light.Position - biasedSurfacePoint;
+                    var lightDistance = lightVector.Length();
+                    var lightDirection = lightVector / lightDistance;
+                    var transmittance = Transmittance(biasedSurfacePoint, lightDirection, lightDistance);
+                    if (transmittance > 0.0F)
                     {
-                        // We have a clear path to the light.
-                        var lightColorIntensity = light.ColorIntensity(shadowRayLength * shadowRayLength);
-                        var diffuse = surfaceMaterial.DiffuseBRDF(shadowRayDirection, surfaceNormal);
-                        var specular = surfaceMaterial.SpecularBRDF(-viewRay.Direction, shadowRayDirection, surfaceNormal);
+                        var lightColorIntensity = light.ColorIntensity(lightDistance * lightDistance) * transmittance;
+                        var diffuse = surfaceMaterial.DiffuseBRDF(lightDirection, surfaceNormal);
+                        var specular = surfaceMaterial.SpecularBRDF(-viewRay.Direction, lightDirection, surfaceNormal);
                         color += lightColorIntensity * (diffuse + specular);
                     }
                 }
                 
                 foreach (var light in this.directionalLights)
                 {
-                    var shadowRayDirection = -light.Direction;
-                    if (Intersect(new Ray(biasedSurfacePoint, shadowRayDirection), ref shadowIntersection) == false)
+                    var lightDirection = -light.Direction;
+                    var transmittance = Transmittance(biasedSurfacePoint, lightDirection, float.PositiveInfinity);
+                    if (transmittance > 0.0F)
                     {
-                        var lightColorIntensity = light.Color * light.Intensity;
-                        var diffuse = surfaceMaterial.DiffuseBRDF(shadowRayDirection, surfaceNormal);
-                        var specular = surfaceMaterial.SpecularBRDF(-viewRay.Direction, shadowRayDirection, surfaceNormal);
+                        var lightColorIntensity = light.Color * light.Intensity * transmittance;
+                        var diffuse = surfaceMaterial.DiffuseBRDF(lightDirection, surfaceNormal);
+                        var specular = surfaceMaterial.SpecularBRDF(-viewRay.Direction, lightDirection, surfaceNormal);
                         color += lightColorIntensity * (diffuse + specular);
                     }
                 }
 
-                // Reflection.
-                if (depth < maxDepth && surfaceMaterial.Reflectivity > 0.0F)
+                // Recursion.
+                if (depth < maxDepth)
                 {
-                    color += Trace(new Ray(biasedSurfacePoint, Vector3.Reflect(viewRay.Direction, surfaceNormal)), depth + 1, maxDepth) * surfaceMaterial.Reflectivity;
+                    // Reflection.
+                    if (surfaceMaterial.Reflectivity > 0.0F)
+                    {
+                        color += Trace(new Ray(biasedSurfacePoint, Vector3.Reflect(viewRay.Direction, surfaceNormal)), depth + 1, maxDepth) * surfaceMaterial.Reflectivity;
+                    }
+
+                    // Refraction.
+                    if (surfaceMaterial.Transparency > 0.0F)
+                    {
+                        if (Refract(viewRay.Direction, surfaceNormal, surfaceMaterial.RefractiveIndex, out var transmissionDirection))
+                        {
+                            var biasedRefractiveSurfacePoint = surfacePoint + transmissionDirection * bias;
+                            color += Trace(new Ray(biasedRefractiveSurfacePoint, transmissionDirection), depth + 1, maxDepth) * surfaceMaterial.Transparency;
+                        }
+                    }
                 }
             }
             else
