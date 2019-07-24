@@ -170,6 +170,32 @@ namespace Raytracer
             return false;
         }
 
+        private float FresnelReflectivity(in Vector3 incidentDirection, in Vector3 surfaceNormal, float minReflectance, float ior1, float ior2)
+        {
+            var normal = surfaceNormal;
+            float theta = Math.Min(1.0F, Math.Max(-1.0F, Vector3.Dot(incidentDirection, surfaceNormal)));
+            if (theta < 0.0F) // Ray goes from first medium into second medium.
+            {
+                theta = -theta;
+            }
+            else // Ray goes from second medium into first medium.
+            {
+                float temp = ior1;
+                ior1 = ior2;
+                ior2 = temp;
+
+                normal = -normal;
+            }
+
+            float t1 = (ior1 - ior2) / (ior1 + ior2);
+            float r0 = Math.Max(minReflectance, t1 * t1);
+            float t2 = 1.0F - (float)Math.Cos(theta);
+            float t3 = t2 * t2;
+            float t4 = t3 * t3 * t2;
+            return r0 + (1.0F - r0) * t4;
+
+        }
+
         /// <summary>
         /// Determines the transmission direction due to refraction.
         /// </summary>
@@ -198,7 +224,8 @@ namespace Raytracer
             }
 
             float ratio = fior / sior;
-            float k = 1.0F - ratio * ratio * (1.0F - cosi * cosi);
+            float t1 = (1.0F - cosi * cosi);
+            float k = 1.0F - ratio * ratio * t1;
             if (k > 0.0F)
             {
                 transmissionDirection = (incidentDirection * ratio) + surfaceNormal * (ratio * cosi - (float)Math.Sqrt(k));
@@ -275,6 +302,7 @@ namespace Raytracer
             var viewIntersection = new Intersection();
             if (Intersect(viewRay, ref viewIntersection))
             {
+                var viewDirection = viewRay.Direction;
                 var surfacePoint = viewIntersection.Point();
                 var surfaceNormal = viewIntersection.Normal;
                 var surfaceMaterial = viewIntersection.Material;
@@ -294,7 +322,7 @@ namespace Raytracer
                     {
                         var lightColorIntensity = light.ColorIntensity(lightDistance * lightDistance) * transmittance;
                         var diffuse = surfaceMaterial.DiffuseBRDF(lightDirection, surfaceNormal, surfaceUV);
-                        var specular = surfaceMaterial.SpecularBRDF(-viewRay.Direction, lightDirection, surfaceNormal);
+                        var specular = surfaceMaterial.SpecularBRDF(-viewDirection, lightDirection, surfaceNormal);
                         color += lightColorIntensity * (diffuse + specular);
                     }
                 }
@@ -307,7 +335,7 @@ namespace Raytracer
                     {
                         var lightColorIntensity = light.Color * light.Intensity * transmittance;
                         var diffuse = surfaceMaterial.DiffuseBRDF(lightDirection, surfaceNormal, surfaceUV);
-                        var specular = surfaceMaterial.SpecularBRDF(-viewRay.Direction, lightDirection, surfaceNormal);
+                        var specular = surfaceMaterial.SpecularBRDF(-viewDirection, lightDirection, surfaceNormal);
                         color += lightColorIntensity * (diffuse + specular);
                     }
                 }
@@ -315,20 +343,22 @@ namespace Raytracer
                 // Recursion.
                 if (depth < maxDepth)
                 {
-                    // Reflection.
-                    if (surfaceMaterial.Reflectivity > 0.0F)
-                    {
-                        color += Trace(new Ray(biasedSurfacePoint, Vector3.Reflect(viewRay.Direction, surfaceNormal)), depth + 1, maxDepth) * surfaceMaterial.Reflectivity;
-                    }
+                    float reflectivity = FresnelReflectivity(viewDirection, surfaceNormal, surfaceMaterial.Reflectivity, 1.0F, surfaceMaterial.RefractiveIndex);
+                    float transmittance = 1.0F - reflectivity;
 
                     // Refraction.
-                    if (surfaceMaterial.Transparency > 0.0F)
+                    if (surfaceMaterial.Transparency > 0.0F && transmittance > 1e-5F)
                     {
-                        if (Refract(viewRay.Direction, surfaceNormal, surfaceMaterial.RefractiveIndex, out var transmissionDirection))
+                        if (Refract(viewDirection, surfaceNormal, surfaceMaterial.RefractiveIndex, out var transmissionDirection))
                         {
                             var biasedRefractiveSurfacePoint = surfacePoint + transmissionDirection * bias;
-                            color += Trace(new Ray(biasedRefractiveSurfacePoint, transmissionDirection), depth + 1, maxDepth) * surfaceMaterial.Transparency;
+                            color += Trace(new Ray(biasedRefractiveSurfacePoint, transmissionDirection), depth + 1, maxDepth) * (surfaceMaterial.Transparency * transmittance);
                         }
+                    }
+
+                    if (reflectivity > 0.0F)
+                    {
+                        color += Trace(new Ray(biasedSurfacePoint, Vector3.Reflect(viewDirection, surfaceNormal)), depth + 1, maxDepth) * reflectivity;
                     }
                 }
             }
@@ -351,7 +381,7 @@ namespace Raytracer
         /// <returns>The color for the pixel.</returns>
         public Color PixelColor(PerspectiveCamera camera, int px, int py, int pw, int ph)
         {
-            var color = Trace(camera.RayForPixel(px, py, pw, ph), 0, 10);
+            var color = Trace(camera.RayForPixel(px, py, pw, ph), 0, 4);
             return Color.Clamp(Color.CorrectGamma(color, camera.Exposure, 1.0F / camera.Gamma));
         }
     }

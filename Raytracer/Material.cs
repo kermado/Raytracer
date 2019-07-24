@@ -75,7 +75,7 @@ namespace Raytracer
         public static readonly Material Green = new Material(new Color(0.0F, 0.005F, 0.0F), Color.Green, Color.Black, 0.5F, 0.0F, 0.0F, 0.0F, 1.0F, null, null);
         public static readonly Material Blue = new Material(new Color(0.0F, 0.0F, 0.005F), Color.Blue, Color.Black, 0.5F, 0.0F, 0.0F, 0.0F, 1.0F, null, null);
         public static readonly Material Mirror = new Material(Color.Black, Color.White, Color.White, 0.01F, 5000.0F, 0.95F, 0.0F, 1.0F, null, null);
-        public static readonly Material Glass = new Material(Color.Black, Color.White, Color.White, 0.01F, 5000.0F, 0.0F, 1.0F, 1.52F, null, null);
-        public static readonly Material Checkerboard = new Material(new Color(0.005F, 0.005F, 0.005F), Color.White, Color.White, 1.0F, 1000.0F, 0.2F, 0.0F, 1.0F, Texture.Checkerboard(2, 2, 100, Color.White, Color.Black), null);
+        public static readonly Material Glass = new Material(Color.Black, Color.White, Color.Black, 0.0F, 0.0F, 0.0F, 1.0F, 1.52F, null, null);
+        public static readonly Material Checkerboard = new Material(new Color(0.005F, 0.005F, 0.005F), Color.White, Color.Black, 1.0F, 0.0F, 0.0F, 0.0F, 1.0F, Texture.Checkerboard(2, 2, 100, Color.White, Color.Black), null);
     }
 }

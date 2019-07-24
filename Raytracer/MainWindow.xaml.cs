@@ -83,7 +83,6 @@ namespace Raytracer
             //this.scene.Add(new Sphere(new Vector3(1.0F, 1.0F, 4.0F), 1.0F, Material.Glass));
             //this.scene.Add(new Plane(new Vector3(0.0F, -1.0F, 0.0F), new Vector3(0.0F, 1.0F, 0.0F)));
 
-            /*
             this.scene.Add(new Sphere(new Vector3(0.0F, 0.0F, -2.0F), 1.0F, Material.Mirror));
             this.scene.Add(new Sphere(new Vector3(-2.0F, 0.0F, -2.0F), 1.0F, Material.Mirror));
             this.scene.Add(new Sphere(new Vector3(2.0F, 0.0F, -2.0F), 1.0F, Material.Mirror));
@@ -120,10 +119,13 @@ namespace Raytracer
             this.scene.Add(new PointLight(new Vector3(-8.0F, 8.0F, 0.0F), Color.White, 2000.0F));
             this.scene.Add(new PointLight(new Vector3(8.0F, 8.0F, 0.0F), Color.White, 2000.0F));
             this.scene.Add(new PointLight(new Vector3(0.0F, 8.0F, -8.0F), Color.White, 2000.0F));
-            */
 
-            this.scene.Add(new Sphere(new Vector3(0.0F, 1.0F, 0.0F), 4.0F, new Material(Color.Black, Color.Black, Color.Black, 1.0F, 25.0F, 0.0F, 0.0F, 1.0F, Texture.FromImage("Earth.png"), null)));
-            this.scene.Add(new PointLight(new Vector3(0.0F, 8.0F, -8.0F), Color.White, 2000.0F));
+            //this.scene.Add(new Plane(new Vector3(0.0F, 2.0F, 0.0F), new Vector3(0.0F, -1.0F, 0.0F), new Vector3(1.0F, 0.0F, 0.0F), Material.Checkerboard));
+            //this.scene.Add(new Plane(new Vector3(0.0F, 0.0F, 0.0F), new Vector3(0.0F, 1.0F, 0.0F), new Vector3(1.0F, 0.0F, 0.0F), Material.Glass));
+            //this.scene.Add(new PointLight(new Vector3(0.0F, 1.0F, 10.0F), Color.White, 2000.0F));
+
+            //this.scene.Add(new Sphere(new Vector3(0.0F, 1.0F, 0.0F), 4.0F, new Material(Color.Black, Color.Black, Color.Black, 1.0F, 25.0F, 0.0F, 0.0F, 1.0F, Texture.FromImage("Earth.png"), null)));
+            //this.scene.Add(new PointLight(new Vector3(0.0F, 8.0F, -8.0F), Color.White, 2000.0F));
 
             this.camera = new PerspectiveCamera();
             this.camera.Position = new Vector3(0.0F, 8.0F, -20.0F);
