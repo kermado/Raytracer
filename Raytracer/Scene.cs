@@ -143,15 +143,24 @@ namespace Raytracer
             {
                 Vector3 point = Ray.Point(ray, minDistance);
                 Vector3 normal;
+                Vector3 tangent;
+                Vector3 bitangent;
+                Vector2 uv;
                 switch (minShapeType)
                 {
                     case ShapeType.Sphere:
                         normal = this.spheres[minIndex].ReflectiveNormal(point, ray.Direction);
-                        intersection = new Intersection(ray, minDistance, normal, this.spheres[minIndex].Material);
+                        tangent = Vector3.Normalize(Vector3.Cross(Vector3.UnitY, normal)); // TODO: Simplify this.
+                        bitangent = Vector3.Cross(normal, tangent); // No need to normalize, since normal and tangent are orthogonal.
+                        uv = TextureMapping.Spherical(Vector3.Normalize(point - this.spheres[minIndex].Center));
+                        intersection = new Intersection(ray, minDistance, normal, tangent, bitangent, uv, this.spheres[minIndex].Material);
                         break;
                     case ShapeType.Plane:
                         normal = this.planes[minIndex].ReflectiveNormal(ray.Direction);
-                        intersection = new Intersection(ray, minDistance, normal, this.planes[minIndex].Material);
+                        tangent = this.planes[minIndex].FirstAxis;
+                        bitangent = this.planes[minIndex].SecondAxis();
+                        uv = this.planes[minIndex].PlanarCoordinates(point);
+                        intersection = new Intersection(ray, minDistance, normal, tangent, bitangent, uv, this.planes[minIndex].Material);
                         break;
                 }
 
@@ -269,6 +278,7 @@ namespace Raytracer
                 var surfacePoint = viewIntersection.Point();
                 var surfaceNormal = viewIntersection.Normal;
                 var surfaceMaterial = viewIntersection.Material;
+                var surfaceUV = viewIntersection.UV;
 
                 // We must bias the surface point in order to prevent self-shadowing.
                 var biasedSurfacePoint = surfacePoint + surfaceNormal * bias;
@@ -283,7 +293,7 @@ namespace Raytracer
                     if (transmittance > 0.0F)
                     {
                         var lightColorIntensity = light.ColorIntensity(lightDistance * lightDistance) * transmittance;
-                        var diffuse = surfaceMaterial.DiffuseBRDF(lightDirection, surfaceNormal);
+                        var diffuse = surfaceMaterial.DiffuseBRDF(lightDirection, surfaceNormal, surfaceUV);
                         var specular = surfaceMaterial.SpecularBRDF(-viewRay.Direction, lightDirection, surfaceNormal);
                         color += lightColorIntensity * (diffuse + specular);
                     }
@@ -296,7 +306,7 @@ namespace Raytracer
                     if (transmittance > 0.0F)
                     {
                         var lightColorIntensity = light.Color * light.Intensity * transmittance;
-                        var diffuse = surfaceMaterial.DiffuseBRDF(lightDirection, surfaceNormal);
+                        var diffuse = surfaceMaterial.DiffuseBRDF(lightDirection, surfaceNormal, surfaceUV);
                         var specular = surfaceMaterial.SpecularBRDF(-viewRay.Direction, lightDirection, surfaceNormal);
                         color += lightColorIntensity * (diffuse + specular);
                     }

@@ -76,6 +76,8 @@
     <Compile Include="Ray.cs" />
     <Compile Include="Scene.cs" />
     <Compile Include="Sphere.cs" />
+    <Compile Include="Texture.cs" />
+    <Compile Include="TextureMapping.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -115,6 +117,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Earth.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
