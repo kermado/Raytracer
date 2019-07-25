@@ -304,12 +304,27 @@ namespace Raytracer
             {
                 var viewDirection = viewRay.Direction;
                 var surfacePoint = viewIntersection.Point();
-                var surfaceNormal = viewIntersection.Normal;
+                var surfaceGeometricNormal = viewIntersection.Normal;
                 var surfaceMaterial = viewIntersection.Material;
                 var surfaceUV = viewIntersection.UV;
 
+                var surfaceTangent = viewIntersection.Tangent;
+                var surfaceBitangent = viewIntersection.Bitangent;
+
+                // Read the surface normal from the normal map.
+                var surfaceNormal = surfaceGeometricNormal; 
+                if (surfaceMaterial.NormalMap != null)
+                {
+                    var tangentSpaceNormal = surfaceMaterial.TangentSpaceNormal(surfaceUV);
+
+                    var r1 = new Vector3(surfaceTangent.X, surfaceBitangent.X, surfaceGeometricNormal.X);
+                    var r2 = new Vector3(surfaceTangent.Y, surfaceBitangent.Y, surfaceGeometricNormal.Y);
+                    var r3 = new Vector3(surfaceTangent.Z, surfaceBitangent.Z, surfaceGeometricNormal.Z);
+                    surfaceNormal = new Vector3(Vector3.Dot(tangentSpaceNormal, r1), Vector3.Dot(tangentSpaceNormal, r2), Vector3.Dot(tangentSpaceNormal, r3));
+                }
+
                 // We must bias the surface point in order to prevent self-shadowing.
-                var biasedSurfacePoint = surfacePoint + surfaceNormal * bias;
+                var biasedSurfacePoint = surfacePoint + surfaceGeometricNormal * bias;
 
                 // Shadows.
                 foreach (var light in this.pointLights)
@@ -361,6 +376,8 @@ namespace Raytracer
                         color += Trace(new Ray(biasedSurfacePoint, Vector3.Reflect(viewDirection, surfaceNormal)), depth + 1, maxDepth) * reflectivity;
                     }
                 }
+
+                color = new Color(Math.Abs(surfaceNormal.X), Math.Abs(surfaceNormal.Y), Math.Abs(surfaceNormal.Z));
             }
             else
             {
@@ -382,7 +399,7 @@ namespace Raytracer
         public Color PixelColor(PerspectiveCamera camera, int px, int py, int pw, int ph)
         {
             var color = Trace(camera.RayForPixel(px, py, pw, ph), 0, 4);
-            return Color.Clamp(Color.CorrectGamma(color, camera.Exposure, 1.0F / camera.Gamma));
+            return Color.Clamp(color);
         }
     }
 }

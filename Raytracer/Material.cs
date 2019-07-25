@@ -46,6 +46,17 @@ namespace Raytracer
         }
 
         /// <summary>
+        /// Looks up the surface normal for the specified uv coordinates from the normal map.
+        /// </summary>
+        /// <param name="uv">The uv coordinates.</param>
+        /// <returns>The surface normal.</returns>
+        public Vector3 TangentSpaceNormal(in Vector2 uv)
+        {
+            var color = NormalMap.Color(uv);
+            return Vector3.Normalize(new Vector3(color.R, color.G, color.B));
+        }
+
+        /// <summary>
         /// Evaluates the Lambertian diffuse BRDF model.
         /// </summary>
         /// <param name="lightDirection">The light direction.</param>
