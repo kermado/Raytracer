@@ -8,11 +8,11 @@ namespace Raytracer
     {
         private readonly int width;
         private readonly int height;
-        private readonly int tilex;
-        private readonly int tiley;
+        private readonly float tilex;
+        private readonly float tiley;
         private readonly Color[] pixels;
 
-        private Texture(int width, int height, int tilex, int tiley)
+        private Texture(int width, int height, float tilex, float tiley)
         {
             this.width = width;
             this.height = height;
@@ -21,7 +21,7 @@ namespace Raytracer
             this.pixels = new Color[width * height];
         }
 
-        public Texture(int width, int height, int tilex, int tiley, Color[] pixels)
+        public Texture(int width, int height, float tilex, float tiley, Color[] pixels)
         {
             this.width = width;
             this.height = height;
@@ -43,7 +43,7 @@ namespace Raytracer
             return this.pixels[(int)py * this.width + (int)px];
         }
 
-        public static unsafe Texture FromImage(string filepath, int tilex = 1, int tiley = 1)
+        public static unsafe Texture FromImage(string filepath, float tilex = 1, float tiley = 1)
         {
             using (var image = new Bitmap(filepath))
             {

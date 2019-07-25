@@ -316,11 +316,7 @@ namespace Raytracer
                 if (surfaceMaterial.NormalMap != null)
                 {
                     var tangentSpaceNormal = surfaceMaterial.TangentSpaceNormal(surfaceUV);
-
-                    var r1 = new Vector3(surfaceTangent.X, surfaceBitangent.X, surfaceGeometricNormal.X);
-                    var r2 = new Vector3(surfaceTangent.Y, surfaceBitangent.Y, surfaceGeometricNormal.Y);
-                    var r3 = new Vector3(surfaceTangent.Z, surfaceBitangent.Z, surfaceGeometricNormal.Z);
-                    surfaceNormal = new Vector3(Vector3.Dot(tangentSpaceNormal, r1), Vector3.Dot(tangentSpaceNormal, r2), Vector3.Dot(tangentSpaceNormal, r3));
+                    surfaceNormal = surfaceTangent * tangentSpaceNormal.X + surfaceBitangent * tangentSpaceNormal.Y + surfaceGeometricNormal * tangentSpaceNormal.Z;
                 }
 
                 // We must bias the surface point in order to prevent self-shadowing.
@@ -376,8 +372,6 @@ namespace Raytracer
                         color += Trace(new Ray(biasedSurfacePoint, Vector3.Reflect(viewDirection, surfaceNormal)), depth + 1, maxDepth) * reflectivity;
                     }
                 }
-
-                color = new Color(Math.Abs(surfaceNormal.X), Math.Abs(surfaceNormal.Y), Math.Abs(surfaceNormal.Z));
             }
             else
             {
@@ -399,7 +393,7 @@ namespace Raytracer
         public Color PixelColor(PerspectiveCamera camera, int px, int py, int pw, int ph)
         {
             var color = Trace(camera.RayForPixel(px, py, pw, ph), 0, 4);
-            return Color.Clamp(color);
+            return Color.Clamp(Color.CorrectGamma(color, camera.Exposure, 1.0F / camera.Gamma));
         }
     }
 }

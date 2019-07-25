@@ -46,14 +46,17 @@ namespace Raytracer
         }
 
         /// <summary>
-        /// Looks up the surface normal for the specified uv coordinates from the normal map.
+        /// Looks up the normal in the tangent-space for the specified uv coordinates from the normal map.
         /// </summary>
         /// <param name="uv">The uv coordinates.</param>
         /// <returns>The surface normal.</returns>
         public Vector3 TangentSpaceNormal(in Vector2 uv)
         {
+            // R [0,1] -> X [-1,1] (tangent)
+            // G [0,1] -> Y [-1,1] (bitangent)
+            // B [0,1] -> Z [0,1]  (normal)
             var color = NormalMap.Color(uv);
-            return Vector3.Normalize(new Vector3(color.R, color.G, color.B));
+            return Vector3.Normalize(new Vector3(-2.0F * color.R + 1.0F, -2.0F * color.G + 1.0F, 2.0F * color.B - 1.0F));
         }
 
         /// <summary>
@@ -87,6 +90,6 @@ namespace Raytracer
         public static readonly Material Blue = new Material(new Color(0.0F, 0.0F, 0.005F), Color.Blue, Color.Black, 0.5F, 0.0F, 0.0F, 0.0F, 1.0F, null, null);
         public static readonly Material Mirror = new Material(Color.Black, Color.White, Color.White, 0.01F, 5000.0F, 0.95F, 0.0F, 1.0F, null, null);
         public static readonly Material Glass = new Material(Color.Black, Color.White, Color.Black, 0.0F, 0.0F, 0.0F, 1.0F, 1.52F, null, null);
-        public static readonly Material Checkerboard = new Material(new Color(0.005F, 0.005F, 0.005F), Color.White, Color.Black, 1.0F, 0.0F, 0.0F, 0.0F, 1.0F, Texture.Checkerboard(2, 2, 100, Color.White, Color.Black), null);
+        public static readonly Material Checkerboard = new Material(new Color(0.005F, 0.005F, 0.005F), Color.White, Color.Black, 1.0F, 0.0F, 0.1F, 0.0F, 1.0F, Texture.Checkerboard(2, 2, 100, Color.White, Color.Black), null);
     }
 }
