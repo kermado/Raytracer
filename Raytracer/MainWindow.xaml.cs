@@ -129,7 +129,8 @@ namespace Raytracer
             //this.scene.Add(new Sphere(new Vector3(0.0F, 1.0F, 0.0F), 4.0F, new Material(Color.Black, Color.Black, Color.Black, 1.0F, 25.0F, 0.0F, 0.0F, 1.0F, Texture.FromImage("Earth.png"), null)));
             //this.scene.Add(new PointLight(new Vector3(0.0F, 8.0F, -8.0F), Color.White, 2000.0F));
 
-            this.scene.Add(new Sphere(new Vector3(0.0F, 1.0F, 0.0F), 1.0F, new Material(Color.Black, Color.Black, Color.White, 1.0F, 50.0F, 0.6F, 0.0F, 1.0F, Texture.FromImage("MetalWeaveDiffuseMap.jpg", 2, 1), Texture.FromImage("MetalWeaveNormalMap.jpg", 2, 1))));
+            /*
+            this.scene.Add(new Sphere(new Vector3(0.0F, 1.0F, 0.0F), 1.0F, new Material(Color.Black, Color.Black, Color.White, 1.0F, 50.0F, 0.0F, 0.0F, 1.0F, Texture.FromImage("MetalWeaveDiffuseMap.jpg", 2, 1), Texture.FromImage("MetalWeaveNormalMap.jpg", 2, 1))));
             this.scene.Add(new PointLight(new Vector3(8.0F, 8.0F, -8.0F), Color.White, 2000.0F));
             this.scene.Add(new PointLight(new Vector3(-8.0F, 8.0F, -8.0F), Color.White, 2000.0F));
             //this.scene.Add(new PointLight(new Vector3(8.0F, 8.0F, 0.0F), Color.White, 1000.0F));
@@ -144,6 +145,15 @@ namespace Raytracer
             this.camera = new PerspectiveCamera();
             this.camera.Position = new Vector3(0.0F, 4.0F, -10.0F);
             this.camera.LookAt(new Vector3(0.0F, 1.0F, 0.0F), Vector3.UnitY);
+            */
+
+            // Normal map test
+            this.scene.Add(new Plane(Vector3.Zero, Vector3.UnitY, Vector3.UnitX, new Material(Color.Black, Color.White, Color.Black, 1.0F, 0.0F, 0.0F, 0.0F, 1.0F, null, Texture.FromImage("TestNormalMap.png", 0.5F, 0.5F))));
+            this.scene.Add(new PointLight(new Vector3(0.0F, 10.0F, 0.0F), Color.White, 2000.0F));
+
+            this.camera = new PerspectiveCamera();
+            this.camera.Position = new Vector3(0.0F, 10.0F, -10.0F);
+            this.camera.LookAt(new Vector3(0.0F, 0.0F, 0.0F), Vector3.UnitY);
         }
 
         private void CreatePixelBuffer()

@@ -159,7 +159,7 @@ namespace Raytracer
                         normal = this.planes[minIndex].ReflectiveNormal(ray.Direction);
                         tangent = this.planes[minIndex].FirstAxis;
                         bitangent = this.planes[minIndex].SecondAxis();
-                        uv = this.planes[minIndex].PlanarCoordinates(point);
+                        uv = TextureMapping.Planar(this.planes[minIndex], point);
                         intersection = new Intersection(ray, minDistance, normal, tangent, bitangent, uv, this.planes[minIndex].Material);
                         break;
                 }

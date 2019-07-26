@@ -17,5 +17,10 @@ namespace Raytracer
             float v = 0.5F - (float)Math.Asin(direction.Y) * invpi;
             return new Vector2(u, v);
         }
+
+        public static Vector2 Planar(in Plane plane, in Vector3 point)
+        {
+            return plane.PlanarCoordinates(point);
+        }
     }
 }

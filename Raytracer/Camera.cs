@@ -163,19 +163,13 @@ namespace Raytracer
         }
 
         /// <summary>
-        /// Create a ray from the camera that passes through the screen door at the top left corner
-        /// of the specified pixel.
+        /// Create a ray from the camera that passes through the screen door at the specified pixel.
         /// </summary>
         /// <remarks>
         /// The pixel coordinate <paramref name="x"/> is assumed to be numbered from 0 to
         /// cols-1 inclusive. Similarly, the pixel coordinate <paramref name="y"/> is assumed to
         /// be numbered from 0 through to rows-1 inclusive. The pixel coordinate (0, 0) is assumed
         /// to be the top left corner of the screen.
-        /// 
-        /// The ray constructed passes through the top left corner of the pixel. Whilst a more
-        /// correct implementation would pass through the center of the pixel, using this definition
-        /// is faster and will just result in the image being shifted up and to the left by just
-        /// half a pixel.
         /// </remarks>
         /// <param name="c">The column for the pixel, in the interval [0, cols-1]</param>
         /// <param name="r">The row for the pixel, in the interval [0, rows-1]</param>

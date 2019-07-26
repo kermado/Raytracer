@@ -30,17 +30,75 @@ namespace Raytracer
             this.pixels = pixels;
         }
 
-        private static float Mod(float a, float b)
-        {
-            return a - b * (float)Math.Floor(a / b);
-        }
-
         public Color Color(in Vector2 uv)
         {
-            float px = Mod(uv.X * tilex, 1.0F) * this.width;
-            float py = Mod(uv.Y * tiley, 1.0F) * this.height;
+            // Apply tiling.
+            float u = uv.X * tilex;
+            float v = uv.Y * tiley;
+
+            // Normalize to [0, 1)
+            float x = u - (float)Math.Floor(u);
+            float y = v - (float)Math.Floor(v);
+
+            // Determine pixel coordinate.
+            float px = x * this.width;
+            float py = y * this.height;
 
             return this.pixels[(int)py * this.width + (int)px];
+        }
+
+        private static Color BilinearInterpolate(float tx, float ty, in Color c00, in Color c10, in Color c01, in Color c11)
+        {
+            // C00                       a         C10
+            //  +------------------------+----------+
+            //  |           ^            |          |
+            //  |           | ty         |
+            //  |           |            |          |
+            //  |           v            | p        |
+            //  +------------------------+----------+
+            //  |                        |          |
+            //  |<---------------------->|          |
+            //  |           tx           |          |
+            //  |                        |          |
+            //  |                        |          |
+            //  |                        |          |
+            //  |                        |          |
+            //  |                        |          |
+            //  +------------------------+----------+
+            // C01                       b         C11
+
+            var temp = (1.0F - tx);
+            var a = c00 * temp + c10 * tx;
+            var b = c01 * temp + c11 * tx;
+            return a * (1.0F - ty) + b * ty;
+        }
+
+        public Color BilinearFilteredColor(in Vector2 uv)
+        {
+            // Apply tiling.
+            float u = uv.X * tilex;
+            float v = uv.Y * tiley;
+
+            // Normalize to [0, 1)
+            float x = u - (float)Math.Floor(u);
+            float y = v - (float)Math.Floor(v);
+
+            // Determine texel colors.
+            float px = x * this.width;
+            float py = y * this.height;
+            int px0 = (int)Math.Floor(px) % this.width;
+            int px1 = (int)Math.Ceiling(px) % this.width;
+            int py0 = (int)Math.Floor(py) % this.height;
+            int py1 = (int)Math.Ceiling(py) % this.height;
+            Color c00 = this.pixels[py0 * this.width + px0];
+            Color c10 = this.pixels[py0 * this.width + px1];
+            Color c01 = this.pixels[py1 * this.width + px0];
+            Color c11 = this.pixels[py1 * this.width + px1];
+
+            // Interpolate.
+            float tx = px - (float)Math.Floor(px);
+            float ty = py - (float)Math.Floor(py);
+            return BilinearInterpolate(tx, ty, c00, c10, c01, c11);
         }
 
         public static unsafe Texture FromImage(string filepath, float tilex = 1, float tiley = 1)
