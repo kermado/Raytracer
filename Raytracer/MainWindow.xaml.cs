@@ -148,7 +148,7 @@ namespace Raytracer
             */
 
             // Normal map test
-            this.scene.Add(new Plane(Vector3.Zero, Vector3.UnitY, Vector3.UnitX, new Material(Color.Black, Color.White, Color.Black, 1.0F, 0.0F, 0.0F, 0.0F, 1.0F, null, Texture.FromImage("TestNormalMap.png", 0.5F, 0.5F))));
+            this.scene.Add(new Plane(Vector3.Zero, Vector3.UnitY, Vector3.UnitX, new Material(Color.Black, Color.White, Color.Black, 1.0F, 0.0F, 0.0F, 0.0F, 1.0F, Vector2.One, null, Texture.FromImage("TestNormalMap.png"))));
             this.scene.Add(new PointLight(new Vector3(0.0F, 10.0F, 0.0F), Color.White, 2000.0F));
 
             this.camera = new PerspectiveCamera();
@@ -169,33 +169,12 @@ namespace Raytracer
                 this.tokenSource.Dispose();
             }
 
-            this.tokenSource = new CancellationTokenSource();
-            var token = this.tokenSource.Token;
-
-            var taskCount = 20;
-            var rowsPerTask = this.height / taskCount;
-            var remainder = this.height - rowsPerTask * taskCount;
-
-            for (int i = 0; i < taskCount; ++i)
+            for (int row = 0; row < this.height; ++row)
             {
-                int start = i * rowsPerTask;
-                int end = start + rowsPerTask;
-                if (i == taskCount - 1) { end += remainder; }
-
-                Task.Run(() =>
-                {
-                    try
-                    {
-                        token.ThrowIfCancellationRequested();
-                        RenderRows(start, end, token);
-                        Dispatcher.BeginInvoke(new Action<int, int>(UpdateBitmapRows), start, end);
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        Console.WriteLine("Cancelled");
-                    }
-                }, token);
+                RenderRow(row);
             }
+
+            UpdateBitmapRows(0, this.height);
         }
 
         private void RenderRows(int startRowInclusive, int endRowExclusive, CancellationToken token)
