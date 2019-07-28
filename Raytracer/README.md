@@ -1,4 +1,6 @@
-﻿# Features
+# A simple C# raytracer.
+
+# Features
 
 * Specular highlights (Blinn-Phong).
 * Reflection.
