@@ -31,8 +31,8 @@ namespace Raytracer
         public readonly Texture DiffuseMap;
         public readonly Texture NormalMap;
 
-        public Material(Color ambientColor, Color diffuseColor, Color specularColor, float albedo, float shininess,
-            float reflectivity, float transparency, float refractiveIndex, Vector2 tiling, Texture diffuseMap, Texture normalMap)
+        public Material(in Color ambientColor, in Color diffuseColor, in Color specularColor, float albedo, float shininess,
+            float reflectivity, float transparency, float refractiveIndex, in Vector2 tiling, Texture diffuseMap, Texture normalMap)
         {
             AmbientColor = ambientColor;
             DiffuseColor = diffuseColor;
@@ -92,6 +92,6 @@ namespace Raytracer
         public static readonly Material Blue = new Material(new Color(0.0F, 0.0F, 0.005F), Color.Blue, Color.Black, 0.5F, 0.0F, 0.0F, 0.0F, 1.0F, Vector2.One, null, null);
         public static readonly Material Mirror = new Material(Color.Black, Color.White, Color.White, 0.01F, 5000.0F, 0.95F, 0.0F, 1.0F, Vector2.One, null, null);
         public static readonly Material Glass = new Material(Color.Black, Color.White, Color.Black, 0.0F, 0.0F, 0.0F, 1.0F, 1.52F, Vector2.One, null, null);
-        public static readonly Material Checkerboard = new Material(new Color(0.005F, 0.005F, 0.005F), Color.White, Color.Black, 1.0F, 0.0F, 0.1F, 0.0F, 1.0F, Vector2.One, Texture.Checkerboard(2, 2, 1000, Color.White, Color.Black), null);
+        public static readonly Material Checkerboard = new Material(new Color(0.005F, 0.005F, 0.005F), Color.White, Color.Black, 1.0F, 0.0F, 0.0F, 0.0F, 1.0F, Vector2.One, Texture.Checkerboard(2, 2, 1000, Color.White, Color.Black), null);
     }
 }

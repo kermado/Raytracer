@@ -12,13 +12,13 @@ namespace Raytracer
         public readonly Vector2 UV;
         public readonly Material Material;
 
-        public Intersection(Ray ray, float distance, Vector3 normal, Vector3 tangent, Vector3 bitangent, Vector2 uv, Material material)
+        public Intersection(in Ray ray, float distance, in Vector3 normal, in Vector3 tangent, in Vector2 uv, in Material material)
         {
             Ray = ray;
             Distance = distance;
             Normal = normal;
             Tangent = tangent;
-            Bitangent = bitangent;
+            Bitangent = Vector3.Cross(normal, tangent); // No need to normalize, since normal and tangent should be orthogonal.
             UV = uv;
             Material = material;
         }

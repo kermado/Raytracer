@@ -208,15 +208,18 @@ namespace Raytracer
             // Determine texel colors.
             float px = x * this.width;
             float py = y * this.height;
-            uint px0 = (uint)(Math.Floor(px) % this.width);
-            uint px1 = (uint)(Math.Ceiling(px) % this.width);
-            uint py0 = (uint)(Math.Floor(py) % this.height);
-            uint py1 = (uint)(Math.Ceiling(py) % this.height);
+            uint px0 = (uint)(px) % this.width;
+            uint px1 = (px0 + 1) % this.width;
+            uint py0 = (uint)(py) % this.height;
+            uint py1 = (py0 + 1) % this.height;
 
-            Color c00 = this.pixels[py0 * this.fullwidth + px0];
-            Color c10 = this.pixels[py0 * this.fullwidth + px1];
-            Color c01 = this.pixels[py1 * this.fullwidth + px0];
-            Color c11 = this.pixels[py1 * this.fullwidth + px1];
+            uint ro0 = py0 * this.fullwidth;
+            uint ro1 = py1 * this.fullwidth;
+
+            var c00 = this.pixels[ro0 + px0];
+            var c10 = this.pixels[ro0 + px1];
+            var c01 = this.pixels[ro1 + px0];
+            var c11 = this.pixels[ro1 + px1];
 
             // Interpolate.
             float tx = px - (float)Math.Floor(px);

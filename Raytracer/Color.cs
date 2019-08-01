@@ -15,32 +15,32 @@ namespace Raytracer
             B = b;
         }
 
-        public static Color Clamp(Color color)
+        public static Color Clamp(in Color color)
         {
             return new Color((float)Math.Min(1.0F, color.R), (float)Math.Min(1.0F, color.G), (float)Math.Min(1.0F, color.B));
         }
 
-        public static Color CorrectGamma(Color color, float exposure, float gamma)
+        public static Color CorrectGamma(in Color color, float exposure, float gamma)
         {
             return new Color((float)Math.Pow(exposure * color.R, gamma), (float)Math.Pow(exposure * color.G, gamma), (float)Math.Pow(exposure * color.B, gamma));
         }
 
-        public static Color operator*(Color color, float scalar)
+        public static Color operator*(in Color color, float scalar)
         {
             return new Color(color.R * scalar, color.G * scalar, color.B * scalar);
         }
 
-        public static Color operator *(float scalar, Color color)
+        public static Color operator *(float scalar, in Color color)
         {
             return color * scalar;
         }
 
-        public static Color operator +(Color c1, Color c2)
+        public static Color operator +(in Color c1, in Color c2)
         {
             return new Color(c1.R + c2.R, c1.G + c2.G, c1.B + c2.B);
         }
 
-        public static Color operator*(Color c1, Color c2)
+        public static Color operator*(in Color c1, in Color c2)
         {
             return new Color(c1.R * c2.R, c1.G * c2.G, c1.B * c2.B);
         }

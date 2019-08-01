@@ -18,9 +18,9 @@ namespace Raytracer
         private PerspectiveCamera camera;
         private int width;
         private int height;
+        private int samplesSqrt;
         private byte[] pixelBuffer;
         private WriteableBitmap bitmap;
-        private CancellationTokenSource tokenSource;
 
         public MainWindow()
         {
@@ -28,6 +28,7 @@ namespace Raytracer
 
             this.width = (int)Width;
             this.height = (int)Height;
+            this.samplesSqrt = 1;
 
             CreatePixelBuffer();
             CreateBitmap();
@@ -103,7 +104,7 @@ namespace Raytracer
             this.scene.Add(new Sphere(new Vector3(-1.0F, (float)Math.Sqrt(2.0F), 1.0F), 1.0F, Material.Mirror));
 
             this.scene.Add(new Sphere(new Vector3(0.0F, (float)Math.Sqrt(2.0F) * 2.0F, 0.0F), 1.0F, Material.Mirror));
-
+            
             this.scene.Add(new Plane(new Vector3(0.0F, -1.0F, 0.0F), new Vector3(0.0F, 1.0F, 0.0F), new Vector3(1.0F, 0.0F, 0.0F), Material.Checkerboard));
             this.scene.Add(new Plane(new Vector3(0.0F, 0.0F, 15.0F), new Vector3(0.0F, 0.0F, -1.0F), new Vector3(1.0F, 0.0F, 0.0F), Material.Default));
             this.scene.Add(new Plane(new Vector3(-15.0F, 0.0F, 0.0F), new Vector3(1.0F, 0.0F, 0.0F), new Vector3(0.0F, 0.0F, 1.0F), Material.Red));
@@ -120,6 +121,10 @@ namespace Raytracer
             this.scene.Add(new PointLight(new Vector3(-8.0F, 8.0F, 0.0F), Color.White, 2000.0F));
             this.scene.Add(new PointLight(new Vector3(8.0F, 8.0F, 0.0F), Color.White, 2000.0F));
             this.scene.Add(new PointLight(new Vector3(0.0F, 8.0F, -8.0F), Color.White, 2000.0F));
+
+            this.camera = new PerspectiveCamera();
+            this.camera.Position = new Vector3(0.0F, 4.0F, -20.0F);
+            this.camera.LookAt(new Vector3(0.0F, 1.0F, 0.0F), Vector3.UnitY);
             */
 
             //this.scene.Add(new Plane(new Vector3(0.0F, 2.0F, 0.0F), new Vector3(0.0F, -1.0F, 0.0F), new Vector3(1.0F, 0.0F, 0.0F), Material.Checkerboard));
@@ -129,31 +134,31 @@ namespace Raytracer
             //this.scene.Add(new Sphere(new Vector3(0.0F, 1.0F, 0.0F), 4.0F, new Material(Color.Black, Color.Black, Color.Black, 1.0F, 25.0F, 0.0F, 0.0F, 1.0F, Texture.FromImage("Earth.png"), null)));
             //this.scene.Add(new PointLight(new Vector3(0.0F, 8.0F, -8.0F), Color.White, 2000.0F));
 
-            /*
-            this.scene.Add(new Sphere(new Vector3(0.0F, 1.0F, 0.0F), 1.0F, new Material(Color.Black, Color.Black, Color.White, 1.0F, 50.0F, 0.0F, 0.0F, 1.0F, Texture.FromImage("MetalWeaveDiffuseMap.jpg", 2, 1), Texture.FromImage("MetalWeaveNormalMap.jpg", 2, 1))));
+            
+            this.scene.Add(new Sphere(new Vector3(0.0F, 1.0F, 0.0F), 1.0F, new Material(Color.Black, Color.White, new Color(0.1F, 0.1F, 0.1F), 1.0F, 10.0F, 0.0F, 0.0F, 1.0F, new Vector2(2.0F, 1.0F), Texture.FromImage("MetalPlateDiffuseMap.jpg"), Texture.FromImage("MetalPlateNormalMap.jpg"))));
             this.scene.Add(new PointLight(new Vector3(8.0F, 8.0F, -8.0F), Color.White, 2000.0F));
             this.scene.Add(new PointLight(new Vector3(-8.0F, 8.0F, -8.0F), Color.White, 2000.0F));
-            //this.scene.Add(new PointLight(new Vector3(8.0F, 8.0F, 0.0F), Color.White, 1000.0F));
-            //this.scene.Add(new PointLight(new Vector3(0.0F, 8.0F, -8.0F), Color.White, 1000.0F));
+            this.scene.Add(new PointLight(new Vector3(0.0F, 8.0F, -8.0F), Color.White, 1000.0F));
 
             this.scene.Add(new Plane(new Vector3(0.0F, 0.0F, 0.0F), new Vector3(0.0F, 1.0F, 0.0F), new Vector3(1.0F, 0.0F, 0.0F), Material.Checkerboard));
-            this.scene.Add(new Plane(new Vector3(0.0F, 10.0F, 0.0F), new Vector3(0.0F, -1.0F, 0.0F), new Vector3(1.0F, 0.0F, 0.0F), Material.Default));
-            this.scene.Add(new Plane(new Vector3(0.0F, 0.0F, 10.0F), new Vector3(0.0F, 0.0F, -1.0F), new Vector3(1.0F, 0.0F, 0.0F), Material.Default));
-            this.scene.Add(new Plane(new Vector3(-10.0F, 0.0F, 0.0F), new Vector3(1.0F, 0.0F, 0.0F), new Vector3(0.0F, 0.0F, 1.0F), Material.Red));
-            this.scene.Add(new Plane(new Vector3(10.0F, 0.0F, 0.0F), new Vector3(-1.0F, 0.0F, 0.0F), new Vector3(0.0F, 0.0F, 1.0F), Material.Green));
+            //this.scene.Add(new Plane(new Vector3(0.0F, 10.0F, 0.0F), new Vector3(0.0F, -1.0F, 0.0F), new Vector3(1.0F, 0.0F, 0.0F), Material.Default));
+            //this.scene.Add(new Plane(new Vector3(0.0F, 0.0F, 10.0F), new Vector3(0.0F, 0.0F, -1.0F), new Vector3(1.0F, 0.0F, 0.0F), Material.Default));
+            //this.scene.Add(new Plane(new Vector3(-10.0F, 0.0F, 0.0F), new Vector3(1.0F, 0.0F, 0.0F), new Vector3(0.0F, 0.0F, 1.0F), Material.Red));
+            //this.scene.Add(new Plane(new Vector3(10.0F, 0.0F, 0.0F), new Vector3(-1.0F, 0.0F, 0.0F), new Vector3(0.0F, 0.0F, 1.0F), Material.Green));
 
             this.camera = new PerspectiveCamera();
-            this.camera.Position = new Vector3(0.0F, 4.0F, -10.0F);
+            this.camera.Position = new Vector3(0.0F, 2.0F, -5.0F);
             this.camera.LookAt(new Vector3(0.0F, 1.0F, 0.0F), Vector3.UnitY);
-            */
 
             // Normal map test
+            /*
             this.scene.Add(new Plane(Vector3.Zero, Vector3.UnitY, Vector3.UnitX, new Material(Color.Black, Color.White, Color.Black, 1.0F, 0.0F, 0.0F, 0.0F, 1.0F, Vector2.One, null, Texture.FromImage("TestNormalMap.png"))));
             this.scene.Add(new PointLight(new Vector3(0.0F, 10.0F, 0.0F), Color.White, 2000.0F));
 
             this.camera = new PerspectiveCamera();
             this.camera.Position = new Vector3(0.0F, 10.0F, -10.0F);
             this.camera.LookAt(new Vector3(0.0F, 0.0F, 0.0F), Vector3.UnitY);
+            */
         }
 
         private void CreatePixelBuffer()
@@ -163,27 +168,17 @@ namespace Raytracer
 
         private void Render()
         {
-            if (this.tokenSource != null)
-            {
-                this.tokenSource.Cancel();
-                this.tokenSource.Dispose();
-            }
-
-            for (int row = 0; row < this.height; ++row)
+            Parallel.For(0, this.height, (row) =>
             {
                 RenderRow(row);
-            }
+            });
+
+            //for (int row = 0; row < this.height; ++row)
+            //{
+            //    RenderRow(row);
+            //}
 
             UpdateBitmapRows(0, this.height);
-        }
-
-        private void RenderRows(int startRowInclusive, int endRowExclusive, CancellationToken token)
-        {
-            for (int row = startRowInclusive; row < endRowExclusive; ++row)
-            {
-                token.ThrowIfCancellationRequested();
-                RenderRow(row);
-            }
         }
 
         private void RenderRow(int row)
@@ -191,7 +186,7 @@ namespace Raytracer
             var index = this.width * row * 3;
             for (int col = 0; col < this.width; ++col)
             {
-                var color = this.scene.PixelColor(this.camera, col, row, this.width, this.height);
+                var color = this.scene.PixelColor(this.camera, col, row, this.width, this.height, this.samplesSqrt);
                 this.pixelBuffer[index++] = (byte)(color.R * 255);
                 this.pixelBuffer[index++] = (byte)(color.G * 255);
                 this.pixelBuffer[index++] = (byte)(color.B * 255);

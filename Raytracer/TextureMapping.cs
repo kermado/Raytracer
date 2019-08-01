@@ -14,7 +14,7 @@ namespace Raytracer
         {
             const float invpi = 1.0F / (float)Math.PI;
             float u = 0.5F + 0.5F * (float)Math.Atan2(direction.Z, direction.X) * invpi;
-            float v = 0.5F - (float)Math.Asin(direction.Y) * invpi;
+            float v = 0.5F - (float)Math.Asin(Math.Max(-1.0F, Math.Min(1.0F, direction.Y))) * invpi;
             return new Vector2(u, v);
         }
 

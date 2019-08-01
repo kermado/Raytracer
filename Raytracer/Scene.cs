@@ -24,22 +24,22 @@ namespace Raytracer
         /// <summary>
         /// The list of point light sources in the scene.
         /// </summary>
-        private List<PointLight> pointLights;
+        private readonly List<PointLight> pointLights;
 
         /// <summary>
         /// The list of directional light sources in the scene.
         /// </summary>
-        private List<DirectionalLight> directionalLights;
+        private readonly List<DirectionalLight> directionalLights;
 
         /// <summary>
         /// The list of sphere primitives in the scene.
         /// </summary>
-        private List<Sphere> spheres;
+        private readonly List<Sphere> spheres;
 
         /// <summary>
         /// The list of plane primitives in the scene.
         /// </summary>
-        private List<Plane> planes;
+        private readonly List<Plane> planes;
 
         /// <summary>
         /// The background color for the scene.
@@ -141,26 +141,23 @@ namespace Raytracer
             // Did we hit anything?
             if (minShapeType != ShapeType.None)
             {
-                Vector3 point = Ray.Point(ray, minDistance);
+                Vector3 point = ray.Point(minDistance);
                 Vector3 normal;
                 Vector3 tangent;
-                Vector3 bitangent;
                 Vector2 uv;
                 switch (minShapeType)
                 {
                     case ShapeType.Sphere:
                         normal = this.spheres[minIndex].ReflectiveNormal(point, ray.Direction);
                         tangent = Vector3.Normalize(Vector3.Cross(Vector3.UnitY, normal)); // TODO: Simplify this.
-                        bitangent = Vector3.Cross(normal, tangent); // No need to normalize, since normal and tangent are orthogonal.
                         uv = TextureMapping.Spherical(Vector3.Normalize(point - this.spheres[minIndex].Center));
-                        intersection = new Intersection(ray, minDistance, normal, tangent, bitangent, uv, this.spheres[minIndex].Material);
+                        intersection = new Intersection(ray, minDistance, normal, tangent, uv, this.spheres[minIndex].Material);
                         break;
                     case ShapeType.Plane:
                         normal = this.planes[minIndex].ReflectiveNormal(ray.Direction);
                         tangent = this.planes[minIndex].FirstAxis;
-                        bitangent = this.planes[minIndex].SecondAxis();
                         uv = TextureMapping.Planar(this.planes[minIndex], point);
-                        intersection = new Intersection(ray, minDistance, normal, tangent, bitangent, uv, this.planes[minIndex].Material);
+                        intersection = new Intersection(ray, minDistance, normal, tangent, uv, this.planes[minIndex].Material);
                         break;
                 }
 
@@ -389,11 +386,23 @@ namespace Raytracer
         /// <param name="py">The vertical pixel coordinate, in the interval [0, ph-1].</param>
         /// <param name="pw">The total number of horizontal pixels.</param>
         /// <param name="ph">The total number of vertical pixels.</param>
+        /// <param name="samplesSqrt">The square root of the number of samples to take.</param>
         /// <returns>The color for the pixel.</returns>
-        public Color PixelColor(PerspectiveCamera camera, int px, int py, int pw, int ph)
+        public Color PixelColor(PerspectiveCamera camera, int px, int py, int pw, int ph, int samplesSqrt)
         {
-            var color = Trace(camera.RayForPixel(px, py, pw, ph), 0, 4);
-            return Color.Clamp(Color.CorrectGamma(color, camera.Exposure, 1.0F / camera.Gamma));
+            var color = Color.Black;
+            for (int sr = 0; sr < samplesSqrt; ++sr)
+            {
+                var sy = py + (1.0F + 2.0F * sr) / (2.0F * samplesSqrt);
+                for (int sc = 0; sc < samplesSqrt; ++sc)
+                {
+                    var sx = px + (1.0F + 2.0F * sc) / (2.0F * samplesSqrt);
+                    var ray = camera.RayForSample(sx, sy, pw, ph);
+                    color += Trace(ray, 0, 4);
+                }
+            }
+            
+            return Color.Clamp(Color.CorrectGamma(color * (1.0F / (samplesSqrt * samplesSqrt)), camera.Exposure, 1.0F / camera.Gamma));
         }
     }
 }

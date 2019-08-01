@@ -13,22 +13,22 @@ namespace Raytracer
         /// <summary>
         /// The vertical field-of-view.
         /// </summary>
-        private float vfov;
+        private readonly float vfov;
 
         /// <summary>
         /// The aspect ratio (with/height).
         /// </summary>
-        private float ar;
+        private readonly float ar;
 
         /// <summary>
         /// The half-height of the screen door.
         /// </summary>
-        private float h;
+        private readonly float h;
 
         /// <summary>
         /// The half-width of the screen door.
         /// </summary>
-        private float w;
+        private readonly float w;
 
         /// <summary>
         /// The exposure, used for color correction.
@@ -104,22 +104,10 @@ namespace Raytracer
             this.transform = Matrix4x4.Identity;
             this.vfov = (float)(Math.PI * 0.125);
             this.ar = (float)(16.0 / 9.0);
-            this.exposure = 1.0F;
-            this.gamma = 2.2F;
-
-            UpdateScreenDimensions();
-        }
-
-        /// <summary>
-        /// Updates the half-width and half-height of the screen door.
-        /// </summary>
-        /// <remarks>
-        /// Must be called after updating the vertical field-of-view or the aspect ratio.
-        /// </remarks>
-        private void UpdateScreenDimensions()
-        {
             this.h = (float)Math.Tan(this.vfov);
             this.w = this.h * ar;
+            this.exposure = 1.0F;
+            this.gamma = 2.2F;            
         }
 
         /// <summary>
@@ -163,7 +151,7 @@ namespace Raytracer
         }
 
         /// <summary>
-        /// Create a ray from the camera that passes through the screen door at the specified pixel.
+        /// Create a ray from the camera that passes through the screen door at the center of the specified pixel.
         /// </summary>
         /// <remarks>
         /// The pixel coordinate <paramref name="x"/> is assumed to be numbered from 0 to
@@ -177,6 +165,13 @@ namespace Raytracer
         /// <param name="rows">The total number of rows of pixels.</param>
         /// <returns>The constructed ray.</returns>
         public Ray RayForPixel(int c, int r, int cols, int rows)
+        {
+            var x = (((2.0F * c + 1.0F) / cols) - 1.0F);
+            var y = -(((2.0F * r + 1.0F) / rows) - 1.0F);
+            return RayForScreenCoordinate(x, y);
+        }
+
+        public Ray RayForSample(float c, float r, int cols, int rows)
         {
             var x = (((2.0F * c) / cols) - 1.0F);
             var y = -(((2.0F * r) / rows) - 1.0F);

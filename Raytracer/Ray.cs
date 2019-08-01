@@ -13,9 +13,9 @@ namespace Raytracer
             Direction = direction;
         }
 
-        public static Vector3 Point(Ray ray, float length)
+        public Vector3 Point(float length)
         {
-            return ray.Start + ray.Direction * length;
+            return Start + Direction * length;
         }
     }
 }
