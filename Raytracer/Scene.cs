@@ -388,7 +388,7 @@ namespace Raytracer
         /// <param name="ph">The total number of vertical pixels.</param>
         /// <param name="samplesSqrt">The square root of the number of samples to take.</param>
         /// <returns>The color for the pixel.</returns>
-        public Color PixelColor(PerspectiveCamera camera, int px, int py, int pw, int ph, int samplesSqrt)
+        public Color PixelColor(PerspectiveCamera camera, uint px, uint py, uint pw, uint ph, uint samplesSqrt)
         {
             var color = Color.Black;
             for (int sr = 0; sr < samplesSqrt; ++sr)

@@ -58,7 +58,7 @@ namespace Raytracer
             // G [0,1] -> Y [-1,1] (bitangent)
             // B [0,1] -> Z [0,1]  (normal)
             var color = NormalMap.BilinearFilteredColor(uv, Tiling);
-            return Vector3.Normalize(new Vector3(2.0F * color.R - 1.0F, -2.0F * color.G + 1.0F, 2.0F * color.B - 1.0F));
+            return Vector3.Normalize(new Vector3(2.0F * color.R - 1.0F, 2.0F * color.G - 1.0F, 2.0F * color.B - 1.0F));
         }
 
         /// <summary>

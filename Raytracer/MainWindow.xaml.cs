@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Numerics;
-using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 
 namespace Raytracer
 {
@@ -16,19 +17,37 @@ namespace Raytracer
     {
         private Scene scene;
         private PerspectiveCamera camera;
-        private int width;
-        private int height;
-        private int samplesSqrt;
+        private uint width;
+        private uint height;
+        private uint samplesSqrt;
         private byte[] pixelBuffer;
         private WriteableBitmap bitmap;
+        private Random random;
+
+        private readonly struct Window
+        {
+            public readonly uint ystart;
+            public readonly uint yend;
+            public readonly uint xstart;
+            public readonly uint xend;
+
+            public Window(uint ystart, uint yend, uint xstart, uint xend)
+            {
+                this.ystart = ystart;
+                this.yend = yend;
+                this.xstart = xstart;
+                this.xend = xend;
+            }
+        }
 
         public MainWindow()
         {
             InitializeComponent();
 
-            this.width = (int)Width;
-            this.height = (int)Height;
-            this.samplesSqrt = 1;
+            this.width = (uint)Width;
+            this.height = (uint)Height;
+            this.samplesSqrt = 2;
+            this.random = new Random();
 
             CreatePixelBuffer();
             CreateBitmap();
@@ -78,11 +97,6 @@ namespace Raytracer
         private void CreateScene()
         {
             this.scene = new Scene();
-
-            //this.scene.Add(new Sphere(new Vector3(0.0F, 1.0F, 6.0F), 1.0F, Material.Default));
-            //this.scene.Add(new Plane(new Vector3(0.0F, 0.0F, 15.0F), new Vector3(0.0F, 0.0F, -1.0F), Material.Default));
-            //this.scene.Add(new Sphere(new Vector3(1.0F, 1.0F, 4.0F), 1.0F, Material.Glass));
-            //this.scene.Add(new Plane(new Vector3(0.0F, -1.0F, 0.0F), new Vector3(0.0F, 1.0F, 0.0F)));
 
             /*
             this.scene.Add(new Sphere(new Vector3(0.0F, 0.0F, -2.0F), 1.0F, Material.Mirror));
@@ -134,7 +148,7 @@ namespace Raytracer
             //this.scene.Add(new Sphere(new Vector3(0.0F, 1.0F, 0.0F), 4.0F, new Material(Color.Black, Color.Black, Color.Black, 1.0F, 25.0F, 0.0F, 0.0F, 1.0F, Texture.FromImage("Earth.png"), null)));
             //this.scene.Add(new PointLight(new Vector3(0.0F, 8.0F, -8.0F), Color.White, 2000.0F));
 
-            
+            /*
             this.scene.Add(new Sphere(new Vector3(0.0F, 1.0F, 0.0F), 1.0F, new Material(Color.Black, Color.White, new Color(0.1F, 0.1F, 0.1F), 1.0F, 10.0F, 0.0F, 0.0F, 1.0F, new Vector2(2.0F, 1.0F), Texture.FromImage("MetalPlateDiffuseMap.jpg"), Texture.FromImage("MetalPlateNormalMap.jpg"))));
             this.scene.Add(new PointLight(new Vector3(8.0F, 8.0F, -8.0F), Color.White, 2000.0F));
             this.scene.Add(new PointLight(new Vector3(-8.0F, 8.0F, -8.0F), Color.White, 2000.0F));
@@ -149,16 +163,17 @@ namespace Raytracer
             this.camera = new PerspectiveCamera();
             this.camera.Position = new Vector3(0.0F, 2.0F, -5.0F);
             this.camera.LookAt(new Vector3(0.0F, 1.0F, 0.0F), Vector3.UnitY);
+            */
 
             // Normal map test
-            /*
+            
             this.scene.Add(new Plane(Vector3.Zero, Vector3.UnitY, Vector3.UnitX, new Material(Color.Black, Color.White, Color.Black, 1.0F, 0.0F, 0.0F, 0.0F, 1.0F, Vector2.One, null, Texture.FromImage("TestNormalMap.png"))));
             this.scene.Add(new PointLight(new Vector3(0.0F, 10.0F, 0.0F), Color.White, 2000.0F));
 
             this.camera = new PerspectiveCamera();
             this.camera.Position = new Vector3(0.0F, 10.0F, -10.0F);
             this.camera.LookAt(new Vector3(0.0F, 0.0F, 0.0F), Vector3.UnitY);
-            */
+            
         }
 
         private void CreatePixelBuffer()
@@ -168,45 +183,68 @@ namespace Raytracer
 
         private void Render()
         {
-            Parallel.For(0, this.height, (row) =>
+            uint maxWindowHeight = 20;
+            uint maxWindowWidth = 20;
+
+            var windows = new List<Window>();
+
+            uint ystart = 0;
+            while (ystart < this.height)
             {
-                RenderRow(row);
-            });
+                uint yend = Math.Min(ystart + maxWindowHeight, this.height);
 
-            //for (int row = 0; row < this.height; ++row)
-            //{
-            //    RenderRow(row);
-            //}
+                uint xstart = 0;
+                while (xstart < this.width)
+                {
+                    uint xend = Math.Min(xstart + maxWindowWidth, this.width);
+                    windows.Add(new Window(ystart, yend, xstart, xend));
+                    xstart = xend;
+                }
 
-            UpdateBitmapRows(0, this.height);
-        }
+                ystart = yend;
+            }
 
-        private void RenderRow(int row)
-        {
-            var index = this.width * row * 3;
-            for (int col = 0; col < this.width; ++col)
+            windows.Shuffle(this.random);
+
+            foreach (var window in windows)
             {
-                var color = this.scene.PixelColor(this.camera, col, row, this.width, this.height, this.samplesSqrt);
-                this.pixelBuffer[index++] = (byte)(color.R * 255);
-                this.pixelBuffer[index++] = (byte)(color.G * 255);
-                this.pixelBuffer[index++] = (byte)(color.B * 255);
+                Task.Run(() => RenderWindow(window));
             }
         }
 
-        private unsafe void UpdateBitmapRows(int startRowInclusive, int endRowExclusive)
+        private void RenderWindow(Window window)
+        {
+            for (uint y = window.ystart; y < window.yend; ++y)
+            {
+                var index = this.width * y * 3 + window.xstart * 3;
+                for (uint x = window.xstart; x < window.xend; ++x)
+                {
+                    var color = this.scene.PixelColor(this.camera, x, y, this.width, this.height, this.samplesSqrt);
+                    this.pixelBuffer[index++] = (byte)(color.R * 255);
+                    this.pixelBuffer[index++] = (byte)(color.G * 255);
+                    this.pixelBuffer[index++] = (byte)(color.B * 255);
+                }
+            }
+
+            this.bitmap.Dispatcher.Invoke(new Action(() => UpdateBitmapWindow(window)), DispatcherPriority.Render);
+        }
+
+        private unsafe void UpdateBitmapWindow(in Window window)
         {
             this.bitmap.Lock();
 
             try
             {
-                byte* ptr = (byte*)this.bitmap.BackBuffer.ToPointer();
-
-                int index = startRowInclusive * this.width * 3;
-                ptr += index;
-
-                for (int row = startRowInclusive; row < endRowExclusive; ++row)
+                var stride = this.bitmap.BackBufferStride;
+                byte* startPtr = (byte*)this.bitmap.BackBuffer.ToPointer();
+                
+                for (uint y = window.ystart; y < window.yend; ++y)
                 {
-                    for (int col = 0; col < this.width; ++col)
+                    var xoffset = window.xstart * 3u;
+                    var index = y * this.width * 3u + xoffset;
+                    byte* ptr = startPtr + y * stride + xoffset;
+
+                    for (uint x = window.xstart; x < window.xend; ++x)
                     {
                         *(ptr++) = this.pixelBuffer[index++];
                         *(ptr++) = this.pixelBuffer[index++];
@@ -214,34 +252,7 @@ namespace Raytracer
                     }
                 }
 
-                this.bitmap.AddDirtyRect(new Int32Rect(0, startRowInclusive, this.width, endRowExclusive - startRowInclusive));
-            }
-            finally
-            {
-                this.bitmap.Unlock();
-            }
-        }
-
-        private unsafe void UpdateBitmap()
-        {
-            this.bitmap.Lock();
-
-            try
-            {
-                byte* ptr = (byte*)this.bitmap.BackBuffer.ToPointer();
-
-                int index = 0;
-                for (int row = 0; row < this.height; ++row)
-                {
-                    for (int col = 0; col < this.width; ++col)
-                    {
-                        *(ptr++) = this.pixelBuffer[index++];
-                        *(ptr++) = this.pixelBuffer[index++];
-                        *(ptr++) = this.pixelBuffer[index++];
-                    }
-                }
-
-                this.bitmap.AddDirtyRect(new Int32Rect(0, 0, this.width, this.height));
+                this.bitmap.AddDirtyRect(new Int32Rect((int)window.xstart, (int)window.ystart, (int)(window.xend - window.xstart), (int)(window.yend - window.ystart)));
             }
             finally
             {
@@ -251,7 +262,7 @@ namespace Raytracer
 
         private void CreateBitmap()
         {
-            this.bitmap = new WriteableBitmap(this.width, this.height, 96, 96, PixelFormats.Rgb24, null);
+            this.bitmap = new WriteableBitmap((int)this.width, (int)this.height, 96, 96, PixelFormats.Rgb24, null);
             Canvas.Source = this.bitmap;
         }
     }

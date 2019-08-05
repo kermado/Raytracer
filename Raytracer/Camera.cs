@@ -164,14 +164,14 @@ namespace Raytracer
         /// <param name="cols">The total number of columns of pixels.</param>
         /// <param name="rows">The total number of rows of pixels.</param>
         /// <returns>The constructed ray.</returns>
-        public Ray RayForPixel(int c, int r, int cols, int rows)
+        public Ray RayForPixel(int c, int r, uint cols, uint rows)
         {
             var x = (((2.0F * c + 1.0F) / cols) - 1.0F);
             var y = -(((2.0F * r + 1.0F) / rows) - 1.0F);
             return RayForScreenCoordinate(x, y);
         }
 
-        public Ray RayForSample(float c, float r, int cols, int rows)
+        public Ray RayForSample(float c, float r, uint cols, uint rows)
         {
             var x = (((2.0F * c) / cols) - 1.0F);
             var y = -(((2.0F * r) / rows) - 1.0F);
